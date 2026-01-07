@@ -1,0 +1,41 @@
+Analyzing praktikmcuas...                                       
+
+   info - Constructors for public widgets should have a named 'key' parameter - lib\main.dart:17:3 - use_key_in_widget_constructors
+   info - Constructors in '@immutable' classes should be declared as 'const' - lib\main.dart:17:3 - prefer_const_constructors_in_immutables
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\artikel_page.dart:5:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\artikel_page.dart:7:3 - library_private_types_in_public_api
+  error - The method 'addArticle' isn't defined for the type 'ApiService' - lib\pages\artikel_page.dart:68:33 - undefined_method
+   info - Don't use 'BuildContext's across async gaps - lib\pages\artikel_page.dart:73:29 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\dashboard_page.dart:8:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\dashboard_page.dart:10:3 - library_private_types_in_public_api
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\dashboard_view.dart:6:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\dashboard_view.dart:8:3 - library_private_types_in_public_api
+   info - Don't invoke 'print' in production code - lib\pages\dashboard_view.dart:43:7 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\dashboard_view.dart:128:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\dashboard_view.dart:130:41 - deprecated_member_use
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\login_page.dart:8:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\login_page.dart:10:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\pages\login_page.dart:34:11 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\notifikasi_page.dart:7:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\notifikasi_page.dart:9:3 - library_private_types_in_public_api
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\profil_page.dart:6:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\profil_page.dart:8:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\pages\profil_page.dart:48:11 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\pages\profil_page.dart:52:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\pages\profil_page.dart:62:7 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\register_page.dart:4:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\register_page.dart:6:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\pages\register_page.dart:27:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\pages\register_page.dart:29:23 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\reset_password_page.dart:4:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\reset_password_page.dart:6:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\pages\reset_password_page.dart:25:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\pages\reset_password_page.dart:27:23 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\pages\transaksi_page.dart:7:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\pages\transaksi_page.dart:9:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\pages\transaksi_page.dart:55:30 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\pages\transaksi_page.dart:63:7 - avoid_print
+  error - The constructor being called isn't a const constructor - test\widget_test.dart:16:29 - const_with_non_const
+  error - The named parameter 'isLoggedIn' is required, but there's no corresponding argument - test\widget_test.dart:16:35 - missing_required_argument
+
+37 issues found. (ran in 5.0s)
