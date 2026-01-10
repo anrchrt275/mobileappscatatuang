@@ -5,17 +5,17 @@ class ApiConfig {
   static String get baseUrl {
     if (kIsWeb) {
       // For web testing
-      return 'http://localhost/praktikmcuas/api';
+      return 'https://rio.bersama.cloud/api';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       // For Android emulator
-      return 'http://10.0.2.2/praktikmcuas/api';
+      return 'https://rio.bersama.cloud/api';
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       // For iOS simulator
-      return 'http://localhost:3000/praktikmcuas/api';
+      return 'https://rio.bersama.cloud/api';
     } else {
       // For physical devices - use your PC's IP address
       // Change this to your actual PC IP address
-      return 'http://192.168.1.100/praktikmcuas/api';
+      return 'https://rio.bersama.cloud/api';
     }
   }
 
@@ -42,8 +42,18 @@ class ApiConfig {
   static String normalizeUrl(String url) {
     if (url.isEmpty) return '';
 
-    // If it's a full URL containing a dev host, extract the filename/relative path
+    // 1. Handle full URLs (starting with http)
     if (url.startsWith('http')) {
+      // Check if it's our production domain
+      if (url.contains('rio.bersama.cloud')) {
+        // Enforce HTTPS
+        if (url.startsWith('http://')) {
+          return url.replaceFirst('http://', 'https://');
+        }
+        return url;
+      }
+
+      // Check for dev hosts (localhost, etc)
       final devHosts = ['localhost', '127.0.0.1', '10.0.2.2', '192.168.1.100'];
       bool isDevUrl = false;
       for (var host in devHosts) {
@@ -53,25 +63,37 @@ class ApiConfig {
         }
       }
 
+      // If it's a dev URL, we want to strip the host and make it relative
+      // so we can re-append the correct base URL (which might be https://rio... or another dev host)
       if (isDevUrl) {
-        // Find the index of /uploads/ or /praktikmcuas/
         if (url.contains('/uploads/')) {
           url = url.substring(url.indexOf('/uploads/') + 9);
-        } else if (url.contains('/api/')) {
-          // Should not really happen for images, but just in case
-          url = url.substring(url.indexOf('/api/') + 5);
+          // Fall through to relative handling
         } else {
-          // If we can't find a path, it might be a direct filename that was just prefixed with http://host/
-          // extract the last part
+          // Can't identify path, just return the last segment
           url = url.split('/').last;
+          // Fall through to relative handling
         }
-        // Now treat it as a relative path below
       } else {
-        return url; // External URL (like Unsplash), leave as is
+        // External URL (like Unsplash/Google), return as is
+        return url;
       }
     }
 
-    // Relative path - assume it's in the uploads folder
-    return '$uploadsUrl/$url';
+    // 2. Handle Relative Paths
+
+    // Remove leading slash if present
+    if (url.startsWith('/')) {
+      url = url.substring(1);
+    }
+
+    // If the path already has 'uploads/', use the view_image.php proxy
+    if (url.startsWith('uploads/')) {
+      final filename = url.replaceFirst('uploads/', '');
+      return '$effectiveBaseUrl/view_image.php?file=$filename';
+    }
+
+    // Otherwise assume it's a filename, use the proxy
+    return '$effectiveBaseUrl/view_image.php?file=$url';
   }
 }

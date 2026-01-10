@@ -143,24 +143,22 @@ class _ProfilPageState extends State<ProfilPage> {
         print('DEBUG: Image upload response: $imageResponse');
 
         if (imageResponse['status'] == 'success') {
-          _profileImageUrl = imageResponse['image_url'];
-          print('DEBUG: Image URL from response: $_profileImageUrl');
+          final newImageUrl = imageResponse['image_url'];
+          print('DEBUG: Image URL from response: $newImageUrl');
+
           // Save image URL to preferences
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('profile_image', _profileImageUrl!);
-          print(
-            'DEBUG: Image URL saved to preferences with key: profile_image',
-          );
+          await prefs.setString('profile_image', newImageUrl!);
+          print('DEBUG: Image URL saved to preferences: $newImageUrl');
 
-          // Verify it was saved correctly
-          final savedUrl = prefs.getString('profile_image');
-          print('DEBUG: Verified saved URL: $savedUrl');
-
-          // Clear the temporary image after successful upload and trigger rebuild
-          setState(() {
-            _profileImage = null;
-            _webImageBytes = null;
-          });
+          // Update the state with the new URL, but KEEP local bytes for now
+          // so the user doesn't see a flicker or error while the network image loads
+          if (mounted) {
+            setState(() {
+              _profileImageUrl = newImageUrl;
+              // We'll clear the temporary images in a bit or let _loadProfile handle it
+            });
+          }
         } else {
           throw Exception(imageResponse['message'] ?? 'Image upload failed');
         }
@@ -183,8 +181,20 @@ class _ProfilPageState extends State<ProfilPage> {
         await prefs.setString('name', _nameController.text);
         await prefs.setString('email', _emailController.text);
 
-        // Reload profile data to ensure the image is displayed correctly
-        _loadProfile();
+        // Simpan profile_image yang dikembalikan oleh server (untuk sinkronisasi)
+        if (response['profile_image'] != null) {
+          await prefs.setString('profile_image', response['profile_image']);
+        }
+
+        // Jangan hapus data lokal (bytes/file) agar tampilan tetap stabil di sesi ini.
+        // Data lokal akan diprioritaskan di widget build agar user langsung melihat hasilnya.
+        if (mounted) {
+          setState(() {
+            // Kita biarkan _profileImage dan _webImageBytes tetap terisi.
+            // _loadProfile akan memperbarui _profileImageUrl dari preferences.
+            _loadProfile();
+          });
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -263,6 +273,11 @@ class _ProfilPageState extends State<ProfilPage> {
     print(
       'DEBUG: _profileImageUrl isEmpty: ${_profileImageUrl?.isEmpty ?? true}',
     );
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      print(
+        'DEBUG: Normalized URL: ${ApiConfig.normalizeUrl(_profileImageUrl!)}',
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
@@ -320,86 +335,107 @@ class _ProfilPageState extends State<ProfilPage> {
             // Profile Image Section
             FadeInDown(
               delay: const Duration(milliseconds: 100),
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Colors.white, Colors.white.withOpacity(0.9)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white,
+                                Colors.white.withOpacity(0.9),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 70,
-                        backgroundColor: Colors.grey[100],
-                        child: ClipOval(
-                          child: _profileImage != null
-                              ? Image.file(
-                                  _profileImage!,
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                )
-                              : _webImageBytes != null
-                              ? Image.memory(
-                                  _webImageBytes!,
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                )
-                              : (_profileImageUrl != null &&
-                                    _profileImageUrl!.isNotEmpty)
-                              ? Image.network(
-                                  ApiConfig.normalizeUrl(_profileImageUrl!),
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            value:
-                                                loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                : null,
-                                          ),
+                          child: CircleAvatar(
+                            radius: 70,
+                            backgroundColor: Colors.grey[100],
+                            child: ClipOval(
+                              child: _profileImage != null
+                                  ? Image.file(
+                                      _profileImage!,
+                                      width: 140,
+                                      height: 140,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : _webImageBytes != null
+                                  ? Image.memory(
+                                      _webImageBytes!,
+                                      width: 140,
+                                      height: 140,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : (_profileImageUrl != null &&
+                                        _profileImageUrl!.isNotEmpty)
+                                  ? Image.network(
+                                      '${ApiConfig.normalizeUrl(_profileImageUrl!)}&v=${DateTime.now().millisecondsSinceEpoch}',
+                                      width: 140,
+                                      height: 140,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                value:
+                                                    loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                              .cumulativeBytesLoaded /
+                                                          loadingProgress
+                                                              .expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        print(
+                                          'DEBUG: Network image error: $error',
+                                        );
+                                        return _buildImagePlaceholder(
+                                          icon: Icons.broken_image_rounded,
+                                          label: 'Error',
+                                          sublabel: 'Gagal memuat',
                                         );
                                       },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return _buildImagePlaceholder(
-                                      icon: Icons.broken_image_rounded,
-                                      label: 'Error Load',
-                                      sublabel: error.toString(),
-                                    );
-                                  },
-                                )
-                              : _buildImagePlaceholder(
-                                  icon: Icons.person_rounded,
-                                  label: 'No Image',
-                                ),
+                                    )
+                                  : _buildImagePlaceholder(
+                                      icon: Icons.person_rounded,
+                                      label: 'No Image',
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'ID Profil: $_userId',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.grey[500],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 30),

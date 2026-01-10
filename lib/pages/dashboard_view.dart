@@ -17,6 +17,7 @@ class _DashboardViewState extends State<DashboardView> {
   double _saldo = 0;
   double _pemasukan = 0;
   double _pengeluaran = 0;
+  bool _isSaldoVisible = true;
   bool _isLoading = true;
   List<Transaction> _recentTransactions = [];
 
@@ -30,10 +31,12 @@ class _DashboardViewState extends State<DashboardView> {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id') ?? 0;
     final name = prefs.getString('name') ?? 'User';
+    final isVisible = prefs.getBool('is_saldo_visible') ?? true;
 
     if (mounted) {
       setState(() {
         _userName = name;
+        _isSaldoVisible = isVisible;
       });
     }
 
@@ -112,15 +115,42 @@ class _DashboardViewState extends State<DashboardView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Total Saldo',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
+                          Row(
+                            children: [
+                              const Text(
+                                'Total Saldo',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  setState(() {
+                                    _isSaldoVisible = !_isSaldoVisible;
+                                    prefs.setBool(
+                                      'is_saldo_visible',
+                                      _isSaldoVisible,
+                                    );
+                                  });
+                                },
+                                child: Icon(
+                                  _isSaldoVisible
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: Colors.white70,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
-                            currencyFormat.format(_saldo),
+                            _isSaldoVisible
+                                ? currencyFormat.format(_saldo)
+                                : 'Rp ••••••••',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -292,11 +322,13 @@ class _DashboardViewState extends State<DashboardView> {
                                 ),
                               ),
                               trailing: Text(
-                                isPemasukan
-                                    ? '+ ${currencyFormat.format(t.amount)}'
-                                    : isPengeluaran
-                                    ? '- ${currencyFormat.format(t.amount)}'
-                                    : '? ${currencyFormat.format(t.amount)}',
+                                _isSaldoVisible
+                                    ? (isPemasukan
+                                          ? '+ ${currencyFormat.format(t.amount)}'
+                                          : isPengeluaran
+                                          ? '- ${currencyFormat.format(t.amount)}'
+                                          : '? ${currencyFormat.format(t.amount)}')
+                                    : '•••••',
                                 style: TextStyle(
                                   color: isPemasukan
                                       ? Colors.green
@@ -361,7 +393,7 @@ class _DashboardViewState extends State<DashboardView> {
           const SizedBox(height: 12),
           FittedBox(
             child: Text(
-              currencyFormat.format(amount),
+              _isSaldoVisible ? currencyFormat.format(amount) : 'Rp •••••',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
