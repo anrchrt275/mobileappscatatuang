@@ -55,15 +55,6 @@ class _DashboardPageState extends State<DashboardPage> {
         foregroundColor: Colors.black87,
         elevation: 0,
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            onPressed: () {
-              // Simple logout logic
-              Navigator.of(context).pushReplacementNamed('/');
-            },
-          ),
-        ],
       ),
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
