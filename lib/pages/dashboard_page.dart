@@ -52,12 +52,26 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Warna latar belakang halaman
       appBar: AppBar(
-        title: const Text(
-          'CATATUANG', // Judul aplikasi di App Bar
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ), // Gaya teks judul
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: const [
+            Text(
+              'CATATUANG', // Judul aplikasi di App Bar
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ), // Gaya teks judul
+            ),
+            SizedBox(width: 8),
+            Text(
+              'AfriYudha, M. Kom', // Nama Programmer
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.normal,
+                color: Colors.grey,
+              ), // Gaya teks nama programmer (lebih kecil)
+            ),
+          ],
         ),
         backgroundColor: Colors.white, // Warna background App Bar
         foregroundColor: Colors.black87, // Warna teks/ikon di App Bar

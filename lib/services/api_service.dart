@@ -134,6 +134,58 @@ class ApiService {
     }
   }
 
+  // Fungsi untuk memperbarui data transaksi
+  Future<Map<String, dynamic>> updateTransaction(
+    int id,
+    int userId,
+    String type,
+    double amount,
+    String note,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.effectiveBaseUrl}/update_transaction.php'),
+            body: {
+              'id': id.toString(),
+              'user_id': userId.toString(),
+              'type': type,
+              'amount': amount.toString(),
+              'note': note,
+            },
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('HTTP Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: ${e.toString()}');
+    }
+  }
+
+  // Fungsi untuk menghapus data transaksi
+  Future<Map<String, dynamic>> deleteTransaction(int id, int userId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.effectiveBaseUrl}/delete_transaction.php'),
+            body: {'id': id.toString(), 'user_id': userId.toString()},
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('HTTP Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: ${e.toString()}');
+    }
+  }
+
   // Fungsi untuk mengambil daftar riwayat transaksi pengguna
   Future<List<Transaction>> getTransactions(int userId) async {
     try {
@@ -301,6 +353,26 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Gagal mengunggah gambar: ${e.toString()}');
+    }
+  }
+
+  // Fungsi untuk menghapus foto profil
+  Future<Map<String, dynamic>> deleteProfileImage(int userId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.effectiveBaseUrl}/delete_profile_image.php'),
+            body: {'user_id': userId.toString()},
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('HTTP Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Gagal menghapus foto profil: ${e.toString()}');
     }
   }
 

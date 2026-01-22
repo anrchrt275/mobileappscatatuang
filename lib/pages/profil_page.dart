@@ -225,6 +225,66 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
+  // Fungsi untuk menghapus foto profil
+  void _deleteProfileImage() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Foto Profil'),
+        content: const Text('Apakah Anda yakin ingin menghapus foto profil?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final response = await _apiService.deleteProfileImage(_userId);
+      if (response['status'] == 'success') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('profile_image');
+        if (mounted) {
+          setState(() {
+            _profileImageUrl = null;
+            _profileImage = null;
+            _webImageBytes = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto profil berhasil dihapus'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception(response['message'] ?? 'Gagal menghapus foto profil');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // Fungsi pembantu untuk membuat placeholder jika gambar gagal dimuat atau tidak ada
   Widget _buildImagePlaceholder({
     required IconData icon,
@@ -418,18 +478,50 @@ class _ProfilPageState extends State<ProfilPage> {
                       ],
                     ),
                   ),
-                  // Menampilkan ID user di bawah foto jika ada gambar
-                  if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'ID Profil: $_userId',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: Colors.grey[500],
+                  const SizedBox(height: 12),
+                  // Tombol Hapus Foto Profil (hanya muncul jika ada foto)
+                  if ((_profileImageUrl != null &&
+                          _profileImageUrl!.isNotEmpty) ||
+                      _profileImage != null ||
+                      _webImageBytes != null)
+                    FadeIn(
+                      child: TextButton.icon(
+                        onPressed: _isLoading ? null : _deleteProfileImage,
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.redAccent,
+                          size: 18,
+                        ),
+                        label: Text(
+                          'Hapus Foto',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
+                  // Menampilkan ID user
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      'ID Profil: $_userId',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

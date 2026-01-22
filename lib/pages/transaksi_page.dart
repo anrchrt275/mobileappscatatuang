@@ -173,6 +173,123 @@ class _TransaksiPageState extends State<TransaksiPage>
     }
   }
 
+  // Fungsi untuk memperbarui data transaksi yang sudah ada
+  void _updateTransaction(int transactionId) async {
+    if (_amountController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Jumlah harus diisi')));
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+
+    try {
+      final response = await _apiService.updateTransaction(
+        transactionId,
+        userId,
+        _type,
+        double.parse(_amountController.text),
+        _noteController.text,
+      );
+
+      if (response['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaksi berhasil diperbarui'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _amountController.clear();
+        _noteController.clear();
+        Navigator.pop(context);
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _loadTransactions();
+          }
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Gagal memperbarui transaksi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Fungsi untuk menghapus transaksi
+  void _deleteTransaction(int transactionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+
+    try {
+      final response = await _apiService.deleteTransaction(
+        transactionId,
+        userId,
+      );
+
+      if (response['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaksi berhasil dihapus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadTransactions();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Gagal menghapus transaksi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Dialog konfirmasi sebelum menghapus
+  void _showDeleteConfirmation(int transactionId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Transaksi'),
+        content: const Text('Apakah Anda yakin ingin menghapus transaksi ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Tutup dialog
+              Navigator.pop(context); // Tutup bottom sheet
+              _deleteTransaction(transactionId);
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Format standar mata uang Rupiah
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
@@ -231,6 +348,10 @@ class _TransaksiPageState extends State<TransaksiPage>
 
   // Menampilkan lembar input (Bottom Sheet) untuk tambah transaksi
   void _showAddTransactionSheet() {
+    _amountController.clear();
+    _noteController.clear();
+    setState(() => _type = 'income');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled:
@@ -357,6 +478,146 @@ class _TransaksiPageState extends State<TransaksiPage>
     );
   }
 
+  // Menampilkan lembar input (Bottom Sheet) untuk edit transaksi
+  void _showEditTransactionSheet(Transaction t) {
+    _amountController.text = t.amount.toString();
+    _noteController.text = t.note;
+    setState(() => _type = t.type);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateSheet) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Edit Transaksi',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _amountController,
+                decoration: const InputDecoration(
+                  hintText: 'Jumlah (Rp)',
+                  prefixIcon: Icon(Icons.money),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: _noteController,
+                decoration: const InputDecoration(
+                  hintText: 'Catatan/Keterangan',
+                  prefixIcon: Icon(Icons.note_alt_outlined),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setStateSheet(() => _type = 'income'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _type == 'income'
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _type == 'income'
+                                ? Colors.green
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Pemasukan',
+                            style: TextStyle(
+                              color: _type == 'income'
+                                  ? Colors.green
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setStateSheet(() => _type = 'expense'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _type == 'expense'
+                              ? Colors.red.withOpacity(0.1)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _type == 'expense'
+                                ? Colors.red
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Pengeluaran',
+                            style: TextStyle(
+                              color: _type == 'expense'
+                                  ? Colors.red
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () => _updateTransaction(t.id),
+                child: const Text(
+                  'Perbarui Transaksi',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Tombol Hapus
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () => _showDeleteConfirmation(t.id),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  label: const Text(
+                    'Hapus Transaksi',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   // Membangun tampilan utama halaman daftar transaksi
   Widget build(BuildContext context) {
@@ -470,6 +731,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                               ],
                             ),
                             child: ListTile(
+                              onTap: () => _showEditTransactionSheet(t),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
