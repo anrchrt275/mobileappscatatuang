@@ -1,141 +1,174 @@
-import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:intl/intl.dart';
-import '../services/api_service.dart';
-import '../models/article.dart';
-import '../services/api_config.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart'; // Mengimport paket material design dari Flutter
+import 'package:animate_do/animate_do.dart'; // Mengimport paket untuk animasi
+import 'package:intl/intl.dart'; // Mengimport paket untuk format tanggal dan waktu
+import '../services/api_service.dart'; // Mengimport layanan API yang sudah dibuat
+import '../models/article.dart'; // Mengimport model data Artikel
+import '../services/api_config.dart'; // Mengimport konfigurasi API
+import 'package:google_fonts/google_fonts.dart'; // Mengimport paket Google Fonts
 
+// Kelas Utama untuk halaman Artikel menggunakan StatefulWidget
 class ArtikelPage extends StatefulWidget {
-  const ArtikelPage({super.key});
+  const ArtikelPage({super.key}); // Konstruktor kelas ArtikelPage
 
   @override
+  // Membuat state untuk ArtikelPage
   State<ArtikelPage> createState() => _ArtikelPageState();
 }
 
+// State class untuk ArtikelPage dengan TickerProvider untuk animasi
 class _ArtikelPageState extends State<ArtikelPage>
     with TickerProviderStateMixin {
-  final _apiService = ApiService();
-  List<Article> _articles = [];
-  bool _isLoading = true;
-  late AnimationController _fabController;
+  final _apiService =
+      ApiService(); // Instance dari ApiService untuk memanggil API
+  List<Article> _articles = []; // List untuk menyimpan daftar artikel
+  bool _isLoading = true; // Boolean untuk status loading data
+  late AnimationController
+  _fabController; // Controller untuk animasi Floating Action Button
 
   @override
+  // Fungsi yang dijalankan pertama kali saat widget dibuat
   void initState() {
-    super.initState();
+    super.initState(); // Memanggil initState dari super class
+    // Inisialisasi controller animasi FAB
     _fabController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
+      vsync: this, // Menghubungkan durasi animasi dengan layar
+      duration: const Duration(milliseconds: 400), // Durasi animasi 400ms
     );
-    _loadArticles();
+    _loadArticles(); // Memanggil fungsi untuk memuat artikel dari API
   }
 
   @override
+  // Fungsi yang dijalankan saat widget dihancurkan
   void dispose() {
-    _fabController.dispose();
-    super.dispose();
+    _fabController.dispose(); // Membuang controller animasi untuk hemat memori
+    super.dispose(); // Memanggil dispose dari super class
   }
 
+  // Fungsi asynchronous untuk mengambil data artikel dari API
   void _loadArticles() async {
     try {
-      final data = await _apiService.getArticles();
-      if (!mounted) return;
+      final data = await _apiService
+          .getArticles(); // Mengambil data artikel lewat API
+      if (!mounted) return; // Jika widget sudah tidak aktif, jangan lanjutkan
       setState(() {
-        _articles = data;
-        _isLoading = false;
-        _fabController.forward();
+        _articles = data; // Simpan data ke variabel list
+        _isLoading = false; // Set loading jadi false
+        _fabController.forward(); // Jalankan animasi FAB muncul
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (!mounted) return; // Jika widget sudah tidak aktif, jangan lanjutkan
+      setState(
+        () => _isLoading = false,
+      ); // Set loading false jika terjadi error
     }
   }
 
+  // Fungsi untuk menampilkan dialog tambah artikel
   void _showAddArticleDialog() {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-    final imageController = TextEditingController();
+    final titleController = TextEditingController(); // Controller input judul
+    final contentController =
+        TextEditingController(); // Controller input konten
+    final imageController =
+        TextEditingController(); // Controller input URL gambar
 
+    // Menampilkan Bottom Sheet (dialog dari bawah)
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      context: context, // Menggunakan context saat ini
+      isScrollControlled: true, // Membuat dialog bisa discroll jika panjang
+      backgroundColor: Colors.transparent, // Latar belakang transparan
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setModalState) {
-          // Add listener to update preview
+          // Menambah pendengar perubahan pada input gambar untuk preview
           imageController.addListener(() {
-            if (context.mounted) setModalState(() {});
+            if (context.mounted)
+              setModalState(() {}); // Update tampilan preview gambar
           });
 
           return Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              color: Colors.white, // Warna putih untuk latar dialog
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(32),
+              ), // Lengkungan atas
             ),
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-              left: 24,
-              right: 24,
-              top: 32,
+              bottom: MediaQuery.of(
+                dialogContext,
+              ).viewInsets.bottom, // Penyesuaian keyboard
+              left: 24, // Padding kiri
+              right: 24, // Padding kanan
+              top: 32, // Padding atas
             ),
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(), // Efek scroll memantul
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Ukuran kolom minimal
+                crossAxisAlignment: CrossAxisAlignment.start, // Rata kiri
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween, // Jarak antara elemen
                     children: [
                       const Text(
-                        'Tambah Artikel Baru',
+                        'Tambah Artikel Baru', // Judul dialog
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
+                          fontSize: 24, // Ukuran font
+                          fontWeight: FontWeight.bold, // Tebal font
+                          letterSpacing: -0.5, // Jarak antar huruf
                         ),
                       ),
                       IconButton(
-                        onPressed: () => Navigator.pop(dialogContext),
-                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () =>
+                            Navigator.pop(dialogContext), // Tombol tutup dialog
+                        icon: const Icon(Icons.close_rounded), // Ikon silang
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
+                          backgroundColor:
+                              Colors.grey[100], // Background tombol abu-abu
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 24), // Jarak pemisah
+                  // Cek jika field input gambar tidak kosong untuk menampilkan preview
                   if (imageController.text.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.only(
+                        bottom: 24,
+                      ), // Jarak bawah preview
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Preview Gambar:',
+                            'Preview Gambar:', // Label preview
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 8), // Jarak label ke gambar
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(
+                              16,
+                            ), // Lengkungan gambar
                             child: Image.network(
-                              ApiConfig.normalizeUrl(imageController.text),
-                              height: 150,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
+                              ApiConfig.normalizeUrl(
+                                imageController.text,
+                              ), // Load gambar dari URL
+                              height: 150, // Tinggi gambar preview
+                              width: double.infinity, // Lebar penuh
+                              fit: BoxFit.cover, // Gambar memenuhi area
                               loadingBuilder:
                                   (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
+                                    if (loadingProgress == null)
+                                      return child; // Gambat selesai dimuat
                                     return Container(
                                       height: 150,
-                                      color: Colors.grey[50],
+                                      color: Colors
+                                          .grey[50], // Loading placeholder
                                       child: const Center(
                                         child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                          strokeWidth: 2, // Ketebalan loading
                                         ),
                                       ),
                                     );
@@ -143,9 +176,10 @@ class _ArtikelPageState extends State<ArtikelPage>
                               errorBuilder: (context, error, stackTrace) =>
                                   _buildSharedImagePlaceholder(
                                     context,
-                                    icon: Icons.broken_image_outlined,
-                                    label: 'Preview Error',
-                                    sublabel: error.toString(),
+                                    icon: Icons
+                                        .broken_image_outlined, // Ikon jika error
+                                    label: 'Preview Error', // Teks error
+                                    sublabel: error.toString(), // Detail error
                                     height: 150,
                                   ),
                             ),
@@ -153,59 +187,73 @@ class _ArtikelPageState extends State<ArtikelPage>
                         ],
                       ),
                     ),
+                  // Field input untuk Judul Artikel
                   _buildTextField(
                     controller: titleController,
                     label: 'Judul Artikel',
                     icon: Icons.title_rounded,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 16), // Jarak antar field
+                  // Field input untuk Konten Artikel
                   _buildTextField(
                     controller: contentController,
                     label: 'Isi Konten Artikel',
                     icon: Icons.article_outlined,
-                    maxLines: 4,
+                    maxLines: 4, // Isi konten bisa 4 baris
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 16), // Jarak antar field
+                  // Field input untuk URL Gambar
                   _buildTextField(
                     controller: imageController,
                     label: 'URL Gambar Luar (misal: https://...)',
                     icon: Icons.link_rounded,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 32), // Jarak ke tombol submit
                   SizedBox(
-                    width: double.infinity,
-                    height: 56,
+                    width: double.infinity, // Lebar tombol penuh
+                    height: 56, // Tinggi tombol
                     child: ElevatedButton(
                       onPressed: () async {
+                        // Validasi input tidak boleh kosong
                         if (titleController.text.isEmpty ||
                             contentController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Judul dan isi tidak boleh kosong'),
-                              behavior: SnackBarBehavior.floating,
+                              content: Text(
+                                'Judul dan isi tidak boleh kosong',
+                              ), // Pesan error
+                              behavior:
+                                  SnackBarBehavior.floating, // Pesan melayang
                             ),
                           );
                           return;
                         }
+                        // Memanggil API tambah artikel
                         await _apiService.addArticle(
                           titleController.text,
                           contentController.text,
                           imageController.text,
                         );
                         if (!mounted) return;
-                        Navigator.pop(dialogContext);
-                        _loadArticles();
+                        Navigator.pop(
+                          dialogContext,
+                        ); // Tutup dialog setelah berhasil
+                        _loadArticles(); // Refresh daftar artikel
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary, // Warna tema utama
+                        foregroundColor: Colors.white, // Warna teks putih
+                        elevation: 0, // Tanpa bayangan
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            16,
+                          ), // Lengkungan tombol
                         ),
                       ),
                       child: const Text(
-                        'Publish Artikel',
+                        'Publish Artikel', // Teks tombol
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -213,7 +261,7 @@ class _ArtikelPageState extends State<ArtikelPage>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 32), // Jarak bawah dialog
                 ],
               ),
             ),
@@ -223,10 +271,17 @@ class _ArtikelPageState extends State<ArtikelPage>
     );
   }
 
+  // Fungsi untuk menampilkan dialog edit artikel
   void _showEditArticleDialog(Article article) {
-    final titleController = TextEditingController(text: article.title);
-    final contentController = TextEditingController(text: article.content);
-    final imageController = TextEditingController(text: article.imageUrl);
+    final titleController = TextEditingController(
+      text: article.title,
+    ); // Isi input dengan judul lama
+    final contentController = TextEditingController(
+      text: article.content,
+    ); // Isi input dengan konten lama
+    final imageController = TextEditingController(
+      text: article.imageUrl,
+    ); // Isi input dengan URL lama
 
     showModalBottomSheet(
       context: context,
@@ -234,7 +289,6 @@ class _ArtikelPageState extends State<ArtikelPage>
       backgroundColor: Colors.transparent,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setModalState) {
-          // Add listener to update preview
           imageController.addListener(() {
             if (context.mounted) setModalState(() {});
           });
@@ -260,7 +314,7 @@ class _ArtikelPageState extends State<ArtikelPage>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Edit Artikel',
+                        'Edit Artikel', // Judul dialog edit
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -359,6 +413,7 @@ class _ArtikelPageState extends State<ArtikelPage>
                           );
                           return;
                         }
+                        // Panggil API update artikel
                         await _apiService.updateArticle(
                           article.id,
                           titleController.text,
@@ -366,11 +421,13 @@ class _ArtikelPageState extends State<ArtikelPage>
                           imageController.text,
                         );
                         if (!mounted) return;
-                        Navigator.pop(dialogContext);
-                        _loadArticles();
+                        Navigator.pop(dialogContext); // Tutup dialog
+                        _loadArticles(); // Refresh data
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Artikel berhasil diperbarui'),
+                            content: Text(
+                              'Artikel berhasil diperbarui',
+                            ), // Notifikasi berhasil
                           ),
                         );
                       },
@@ -383,7 +440,7 @@ class _ArtikelPageState extends State<ArtikelPage>
                         ),
                       ),
                       child: const Text(
-                        'Simpan Perubahan',
+                        'Simpan Perubahan', // Teks tombol simpan
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -401,32 +458,37 @@ class _ArtikelPageState extends State<ArtikelPage>
     );
   }
 
+  // Widget helper untuk membuat input text field yang konsisten
   Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    int maxLines = 1,
+    required TextEditingController controller, // Controller input
+    required String label, // Label teks input
+    required IconData icon, // Ikon input
+    int maxLines = 1, // Jumlah baris input (default 1)
   }) {
     return TextField(
-      controller: controller,
-      maxLines: maxLines,
+      controller: controller, // Menghubungkan controller
+      maxLines: maxLines, // Jumlah baris
       decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey[400]),
-        filled: true,
-        fillColor: Colors.grey[50],
+        labelText: label, // Label di atas input
+        prefixIcon: Icon(icon, color: Colors.grey[400]), // Ikon di kiri input
+        filled: true, // Latar input berwarna
+        fillColor: Colors.grey[50], // Warna latar abu sangat muda
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16), // Lengkungan sudut
+          borderSide: BorderSide.none, // Tanpa garis pinggir
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(
+            color: Colors.grey[200]!,
+          ), // Garis saat tidak fokus
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.5), // Garis saat fokus
             width: 2,
           ),
         ),
@@ -435,21 +497,23 @@ class _ArtikelPageState extends State<ArtikelPage>
   }
 
   @override
+  // Membangun tampilan utama halaman
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8FAFC), // Warna latar halaman belakang
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const BouncingScrollPhysics(), // Scroll memantul gaya iOS
         slivers: [
+          // App bar yang bisa mengecil saat discroll
           SliverAppBar(
-            expandedHeight: 120,
-            floating: true,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: Colors.white,
+            expandedHeight: 120, // Tinggi maksimal saat terbuka
+            floating: true, // Muncul kembali saat scroll ke atas sedikit
+            pinned: true, // Menetap di atas saat discroll jauh
+            elevation: 0, // Tanpa bayangan
+            backgroundColor: Colors.white, // Baground putih
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
-                'Artikel Terbaru',
+                'Artikel Terbaru', // Judul app bar
                 style: TextStyle(
                   color: Colors.black87,
                   fontSize: 20,
@@ -457,23 +521,33 @@ class _ArtikelPageState extends State<ArtikelPage>
                   letterSpacing: -0.5,
                 ),
               ),
-              centerTitle: false,
-              titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+              centerTitle: false, // Judul tidak di tengah
+              titlePadding: const EdgeInsets.only(
+                left: 24,
+                bottom: 16,
+              ), // Jarak judul
             ),
             actions: [
               IconButton(
-                onPressed: () => _loadArticles(),
+                onPressed: () => _loadArticles(), // Tombol refresh
                 icon: const Icon(Icons.refresh_rounded, color: Colors.black87),
               ),
               const SizedBox(width: 8),
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              10,
+              20,
+              100,
+            ), // Padding daftar
             sliver: _isLoading
                 ? const SliverFillRemaining(
                     child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ), // Loading tengah layar
                     ),
                   )
                 : _articles.isEmpty
@@ -486,14 +560,14 @@ class _ArtikelPageState extends State<ArtikelPage>
                             Opacity(
                               opacity: 0.5,
                               child: Icon(
-                                Icons.article_outlined,
+                                Icons.article_outlined, // Ikon jika kosong
                                 size: 100,
                                 color: Colors.grey[400],
                               ),
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              'Belum ada artikel',
+                              'Belum ada artikel', // Teks jika kosong
                               style: TextStyle(
                                 color: Colors.grey[500],
                                 fontSize: 18,
@@ -514,35 +588,43 @@ class _ArtikelPageState extends State<ArtikelPage>
                     ),
                   )
                 : SliverList(
+                    // Delegasi untuk membangun item dalam list
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      final a = _articles[index];
+                      final a = _articles[index]; // Ambil data tiap index
                       return FadeInUp(
+                        // Animasi muncul dari bawah
                         delay: Duration(
-                          milliseconds: 100 * (index > 5 ? 5 : index),
+                          milliseconds:
+                              100 * (index > 5 ? 5 : index), // Delay bertahap
                         ),
                         child: _ArticleCard(
-                          article: a,
-                          index: index,
-                          onDelete: () => _deleteArticle(a.id),
-                          onEdit: () => _showEditArticleDialog(a),
+                          article: a, // Kirim data artikel ke widget card
+                          index: index, // Kirim index
+                          onDelete: () => _deleteArticle(a.id), // Fungsi hapus
+                          onEdit: () =>
+                              _showEditArticleDialog(a), // Fungsi edit
                         ),
                       );
-                    }, childCount: _articles.length),
+                    }, childCount: _articles.length), // Jumlah item
                   ),
           ),
         ],
       ),
+      // Tombol tambah melayang di pojok
       floatingActionButton: ScaleTransition(
         scale: CurvedAnimation(
-          parent: _fabController,
-          curve: Curves.elasticOut,
+          parent: _fabController, // Animasi skala tombol
+          curve: Curves.elasticOut, // Efek memantul
         ),
         child: FloatingActionButton.extended(
-          onPressed: _showAddArticleDialog,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          icon: const Icon(Icons.add_rounded, color: Colors.white),
+          onPressed: _showAddArticleDialog, // Panggil dialog tambah
+          backgroundColor: Theme.of(context).colorScheme.primary, // Warna tema
+          icon: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+          ), // Ikon tambah
           label: const Text(
-            'Tulis Artikel',
+            'Tulis Artikel', // Label tombol
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -550,15 +632,16 @@ class _ArtikelPageState extends State<ArtikelPage>
             ),
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20), // Bentuk tombol lonjong
           ),
         ),
       ),
     );
   }
 
+  // Fungsi untuk menghapus artikel dengan konfirmasi
   void _deleteArticle(int id) async {
-    // Show confirmation dialog
+    // Memunculkan dialog konfirmasi
     bool confirm =
         await showDialog(
           context: context,
@@ -567,42 +650,49 @@ class _ArtikelPageState extends State<ArtikelPage>
             content: const Text('Artikel ini akan dihapus secara permanen.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () =>
+                    Navigator.pop(context, false), // Tutup dan kirim false
                 child: const Text('Batal'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () =>
+                    Navigator.pop(context, true), // Tutup dan kirim true
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ), // Tombol warna merah
                 child: const Text('Hapus'),
               ),
             ],
           ),
         ) ??
-        false;
+        false; // Default false jika dialog terbatal
 
     if (confirm) {
       try {
-        await _apiService.deleteArticle(id);
+        await _apiService.deleteArticle(id); // Panggil API hapus
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Artikel berhasil dihapus')),
+          const SnackBar(
+            content: Text('Artikel berhasil dihapus'),
+          ), // Alert berhasil
         );
-        _loadArticles();
+        _loadArticles(); // Refresh daftar artikel
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menghapus artikel: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus artikel: $e')),
+        ); // Alert gagal
       }
     }
   }
 }
 
+// Widget internal untuk menampilkan satu kartu artikel
 class _ArticleCard extends StatefulWidget {
-  final Article article;
-  final int index;
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
+  final Article article; // Objek data artikel
+  final int index; // Index urutan artikel
+  final VoidCallback onDelete; // Fungsi callback hapus
+  final VoidCallback onEdit; // Fungsi callback edit
 
   const _ArticleCard({
     required this.article,
@@ -612,15 +702,17 @@ class _ArticleCard extends StatefulWidget {
   });
 
   @override
+  // Membuat state untuk kartu artikel
   State<_ArticleCard> createState() => _ArticleCardState();
 }
 
+// State untuk kartu artikel dengan TickerProvider tunggal
 class _ArticleCardState extends State<_ArticleCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _hoverController;
-  late Animation<double> _scale;
+  late AnimationController _hoverController; // Controller untuk efek hover
+  late Animation<double> _scale; // Animasi skala saat disentuh/hover
 
-  // Curated list of high-quality financial/business images from Unsplash
+  // Daftar gambar default dari Unsplash jika URL tidak tersedia
   final List<String> _defaultImages = [
     'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80',
     'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80',
@@ -630,37 +722,45 @@ class _ArticleCardState extends State<_ArticleCard>
     'https://images.unsplash.com/photo-1591696208162-a97b7059744c?w=800&q=80',
   ];
 
+  // Getter untuk menentukan gambar mana yang akan ditampilkan
   String get _displayImage {
     if (widget.article.imageUrl.isNotEmpty) {
-      return ApiConfig.normalizeUrl(widget.article.imageUrl);
+      return ApiConfig.normalizeUrl(widget.article.imageUrl); // Pakai URL user
     }
-    // Use index to consistently pick the same image for the same article in the list
+    // Pakai gambar default berdasarkan sisa bagi index agar bervariasi
     return _defaultImages[widget.index % _defaultImages.length];
   }
 
   @override
+  // Inisialisasi state animasi hover
   void initState() {
     super.initState();
     _hoverController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(
+        milliseconds: 200,
+      ), // Durasi transisi hover cepat
     );
 
+    // Animasi perubahan skala dari 100% ke 102%
     _scale = Tween<double>(begin: 1, end: 1.02).animate(
       CurvedAnimation(parent: _hoverController, curve: Curves.easeInOut),
     );
   }
 
   @override
+  // Buang controller saat widget dihapus
   void dispose() {
     _hoverController.dispose();
     super.dispose();
   }
 
+  // Menampilkan detail artikel lengkap dalam dialog
   void _showDetailDialog() {
     showDialog(
       context: context,
       builder: (context) => ZoomIn(
+        // Efek muncul membesar dari tengah
         duration: const Duration(milliseconds: 300),
         child: Dialog(
           insetPadding: const EdgeInsets.symmetric(
@@ -668,7 +768,7 @@ class _ArticleCardState extends State<_ArticleCard>
             vertical: 24,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(32), // Sudut tumpul dialog
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 500),
@@ -678,6 +778,7 @@ class _ArticleCardState extends State<_ArticleCard>
                 Stack(
                   children: [
                     Hero(
+                      // Animasi perpindahan gambar antar layar/dialog
                       tag: 'article_image_${widget.article.id}',
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(
@@ -711,6 +812,7 @@ class _ArticleCardState extends State<_ArticleCard>
                         ),
                       ),
                     ),
+                    // Tombol aksi melayang (edit, hapus, tutup)
                     Positioned(
                       top: 16,
                       right: 16,
@@ -721,11 +823,12 @@ class _ArticleCardState extends State<_ArticleCard>
                             child: IconButton(
                               icon: const Icon(
                                 Icons.edit_outlined,
-                                color: Colors.blueAccent,
+                                color:
+                                    Colors.blueAccent, // Warna bitu untuk edit
                               ),
                               onPressed: () {
-                                Navigator.pop(context);
-                                widget.onEdit();
+                                Navigator.pop(context); // Tutup dialog dulu
+                                widget.onEdit(); // Panggil fungsi edit
                               },
                             ),
                           ),
@@ -735,11 +838,12 @@ class _ArticleCardState extends State<_ArticleCard>
                             child: IconButton(
                               icon: const Icon(
                                 Icons.delete_outline_rounded,
-                                color: Colors.redAccent,
+                                color:
+                                    Colors.redAccent, // Warna merah untuk hapus
                               ),
                               onPressed: () {
-                                Navigator.pop(context);
-                                widget.onDelete();
+                                Navigator.pop(context); // Tutup dialog dulu
+                                widget.onDelete(); // Panggil fungsi hapus
                               },
                             ),
                           ),
@@ -751,7 +855,8 @@ class _ArticleCardState extends State<_ArticleCard>
                                 Icons.close_rounded,
                                 color: Colors.black87,
                               ),
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () =>
+                                  Navigator.pop(context), // Tutup dialog
                             ),
                           ),
                         ],
@@ -765,6 +870,7 @@ class _ArticleCardState extends State<_ArticleCard>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Chip kategori/label artikel
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -787,6 +893,7 @@ class _ArticleCardState extends State<_ArticleCard>
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Judul artikel di dalam dialog
                         Text(
                           widget.article.title,
                           style: const TextStyle(
@@ -797,6 +904,7 @@ class _ArticleCardState extends State<_ArticleCard>
                           ),
                         ),
                         const SizedBox(height: 12),
+                        // Info tanggal pembuatan
                         Row(
                           children: [
                             Icon(
@@ -817,14 +925,15 @@ class _ArticleCardState extends State<_ArticleCard>
                           ],
                         ),
                         const SizedBox(height: 24),
-                        const Divider(),
+                        const Divider(), // Garis pembatas
                         const SizedBox(height: 24),
+                        // Isi penuh artikel
                         Text(
                           widget.article.content,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[800],
-                            height: 1.7,
+                            height: 1.7, // Jarak antar baris teks
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -841,20 +950,23 @@ class _ArticleCardState extends State<_ArticleCard>
   }
 
   @override
+  // Membangun tampilan satu kartu artikel
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _hoverController,
+      animation: _hoverController, // Mendengarkan perubahan animasi hover
       builder: (context, child) {
         return Transform.scale(
-          scale: _scale.value,
+          scale: _scale.value, // Ubah skala berdasar animasi
           child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
+            margin: const EdgeInsets.only(bottom: 20), // Jarak ke item bawahnya
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withOpacity(
+                    0.04,
+                  ), // Bayangan sangat halus
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -863,18 +975,21 @@ class _ArticleCardState extends State<_ArticleCard>
             child: Material(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(28),
-              clipBehavior: Clip.antiAlias,
+              clipBehavior: Clip
+                  .antiAlias, // Memotong anak widget sesuai sudut melengkung
               child: InkWell(
-                onTap: _showDetailDialog,
-                onHover: (h) =>
-                    h ? _hoverController.forward() : _hoverController.reverse(),
+                onTap: _showDetailDialog, // Aksi saat kartu ditekan
+                onHover: (h) => h
+                    ? _hoverController.forward()
+                    : _hoverController.reverse(), // Jalan animasi saat hover
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Stack(
                       children: [
                         Hero(
-                          tag: 'article_image_${widget.article.id}',
+                          tag:
+                              'article_image_${widget.article.id}', // Tag unikHero
                           child: Image.network(
                             _displayImage,
                             height: 180,
@@ -903,6 +1018,7 @@ class _ArticleCardState extends State<_ArticleCard>
                                 ),
                           ),
                         ),
+                        // Label "Tips" di atas gambar
                         Positioned(
                           top: 16,
                           left: 16,
@@ -949,10 +1065,12 @@ class _ArticleCardState extends State<_ArticleCard>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Judul dalam daftar (maks 2 baris)
                           Text(
                             widget.article.title,
                             maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow
+                                .ellipsis, // Potong teks jika panjang
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -961,6 +1079,7 @@ class _ArticleCardState extends State<_ArticleCard>
                             ),
                           ),
                           const SizedBox(height: 8),
+                          // Cuplikan isi dalam daftar (maks 2 baris)
                           Text(
                             widget.article.content,
                             maxLines: 2,
@@ -972,6 +1091,7 @@ class _ArticleCardState extends State<_ArticleCard>
                             ),
                           ),
                           const SizedBox(height: 20),
+                          // Tanggal dan link baca selengkapnya
                           Row(
                             children: [
                               Text(
@@ -984,7 +1104,7 @@ class _ArticleCardState extends State<_ArticleCard>
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const Spacer(),
+                              const Spacer(), // Dorong widget berikutnya ke ujung kanan
                               Text(
                                 'Baca Selengkapnya',
                                 style: TextStyle(
@@ -1015,12 +1135,13 @@ class _ArticleCardState extends State<_ArticleCard>
   }
 }
 
+// Widget utilitas untuk menampilkan placeholder/error gambar yang bisa dipakai ulang
 Widget _buildSharedImagePlaceholder(
   BuildContext context, {
-  required IconData icon,
-  required String label,
-  String? sublabel,
-  double height = 150,
+  required IconData icon, // Ikon pusat
+  required String label, // Label utama
+  String? sublabel, // Sublabel opsional
+  double height = 150, // Tinggi default
 }) {
   return Container(
     height: height,
@@ -1046,7 +1167,7 @@ Widget _buildSharedImagePlaceholder(
             fontWeight: FontWeight.w500,
           ),
         ),
-        if (sublabel != null)
+        if (sublabel != null) // Jika ada sublabel (pesan error) taring di bawah
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(

@@ -1,38 +1,47 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
-import '../services/api_service.dart';
-import '../services/api_config.dart';
-import 'login_page.dart';
+import 'package:flutter/material.dart'; // Mengimport paket material design Flutter
+import 'package:flutter/foundation.dart'; // Mengimport utilitas dasar Flutter (seperti kIsWeb)
+import 'package:animate_do/animate_do.dart'; // Mengimport library animasi widget
+import 'package:shared_preferences/shared_preferences.dart'; // Mengimport penyimpanan lokal sederhana
+import 'package:image_picker/image_picker.dart'; // Mengimport pengambil gambar dari galeri/kamera
+import 'package:google_fonts/google_fonts.dart'; // Mengimport paket Google Fonts
+import 'dart:io'; // Mengimport library input/output sistem (untuk File)
+import '../services/api_service.dart'; // Mengimport layanan API yang telah dibuat
+import '../services/api_config.dart'; // Mengimport konfigurasi API (seperti normalisasi URL)
+import 'login_page.dart'; // Mengimport halaman login untuk proses logout
 
+// Kelas utama halaman Profil sebagai StatefulWidget
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
 
   @override
+  // Membuat state untuk halaman profil
   State<ProfilPage> createState() => _ProfilPageState();
 }
 
+// State class untuk mengelola data dan logika profil user
 class _ProfilPageState extends State<ProfilPage> {
-  final _apiService = ApiService();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final ImagePicker _imagePicker = ImagePicker();
-  int _userId = 0;
-  bool _isLoading = false;
-  File? _profileImage;
-  String? _profileImageUrl;
-  Uint8List? _webImageBytes; // For web platform image storage
+  final _apiService = ApiService(); // Instansiasi layanan API
+  final _nameController =
+      TextEditingController(); // Controller untuk input nama
+  final _emailController =
+      TextEditingController(); // Controller untuk input email
+  final ImagePicker _imagePicker =
+      ImagePicker(); // Instansiasi pengambil gambar
+  int _userId = 0; // Menyimpan ID user
+  bool _isLoading = false; // Status loading proses update
+  File? _profileImage; // Menyimpan file gambar profil (untuk mobile)
+  String? _profileImageUrl; // Menyimpan URL gambar profil dari server
+  Uint8List?
+  _webImageBytes; // Menyimpan bytes gambar profil (khusus untuk platform web)
 
   @override
+  // Fungsi yang dijalankan saat widget pertama kali dibuat
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadProfile(); // Memuat data profil dari memori lokal
   }
 
+  // Fungsi untuk mengambil data profil yang tersimpan di SharedPreferences
   void _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
@@ -40,7 +49,10 @@ class _ProfilPageState extends State<ProfilPage> {
         _userId = prefs.getInt('user_id') ?? 0;
         _nameController.text = prefs.getString('name') ?? '';
         _emailController.text = prefs.getString('email') ?? '';
-        _profileImageUrl = prefs.getString('profile_image');
+        _profileImageUrl = prefs.getString(
+          'profile_image',
+        ); // Mengambil URL gambar tersimpan
+        // Log debug untuk memantau data yang dimuat
         print('DEBUG: Loaded profile image URL: $_profileImageUrl');
         print('DEBUG: User ID: $_userId');
         print('DEBUG: Name: ${_nameController.text}');
@@ -49,11 +61,12 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
+  // Fungsi asinkron untuk mengambil gambar dari galeri ponsel/browser
   Future<void> _pickImage() async {
     try {
-      // Check if we're on web platform
+      // Pengecekan apakah aplikasi berjalan di platform Web
       if (kIsWeb) {
-        // Web-specific handling
+        // Penanganan khusus untuk Web
         final pickedFile = await _imagePicker.pickImage(
           source: ImageSource.gallery,
           maxWidth: 800,
@@ -63,28 +76,25 @@ class _ProfilPageState extends State<ProfilPage> {
 
         if (pickedFile != null) {
           print('DEBUG: Web image picked: ${pickedFile.name}');
-          // Read image bytes for web
+          // Membaca bytes gambar karena Web tidak mendukung path file lokal secara langsung
           final bytes = await pickedFile.readAsBytes();
           setState(() {
-            // For web, store the bytes for display
-            _profileImage = null; // Web doesn't use File objects
-            _webImageBytes = bytes; // Store the web image bytes
+            _profileImage = null; // Web tidak menggunakan objek File
+            _webImageBytes = bytes; // Simpan bytes untuk ditampilkan di UI
           });
 
-          // Show success message for web
+          // Notifikasi berhasil memilih gambar di Web
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Image selected successfully (Web)'),
+                content: Text('Gambar berhasil dipilih (Web)'),
                 backgroundColor: Colors.green,
               ),
             );
           }
-        } else {
-          print('DEBUG: No image selected');
         }
       } else {
-        // Mobile/desktop handling
+        // Penanganan untuk platform Mobile (Android/iOS)
         final pickedFile = await _imagePicker.pickImage(
           source: ImageSource.gallery,
           maxWidth: 800,
@@ -95,24 +105,21 @@ class _ProfilPageState extends State<ProfilPage> {
         if (pickedFile != null) {
           print('DEBUG: Image picked: ${pickedFile.path}');
           setState(() {
-            _profileImage = File(pickedFile.path);
+            _profileImage = File(pickedFile.path); // Simpan sebagai objek File
           });
-          print('DEBUG: Profile image set: ${_profileImage?.path}');
-        } else {
-          print('DEBUG: No image selected');
         }
       }
     } catch (e) {
+      // Penanganan error saat mengambil gambar
       print('DEBUG: Error picking image: $e');
-      String errorMessage = 'Error picking image: ${e.toString()}';
+      String errorMessage = 'Gagal mengambil gambar: ${e.toString()}';
 
-      // Provide more specific error messages
+      // Pesan error spesifik jika plugin bermasalah atau izin ditolak
       if (e.toString().contains('MissingPluginException')) {
-        errorMessage =
-            'Image picker plugin not properly configured. Please run on a mobile device or emulator.';
+        errorMessage = 'Plugin image picker tidak terkonfigurasi dengan benar.';
       } else if (e.toString().contains('permission')) {
         errorMessage =
-            'Permission denied. Please grant camera/storage permissions.';
+            'Izin ditolak. Silakan berikan izin akses kamera/galeri.';
       }
 
       if (mounted) {
@@ -127,16 +134,16 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
+  // Fungsi untuk mengirim perubahan profil ke server
   void _updateProfile() async {
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Mulai loading
     try {
       print('DEBUG: Starting profile update');
-      print('DEBUG: User ID: $_userId');
-      print('DEBUG: Has profile image: ${_profileImage != null}');
 
-      // Upload image if selected
+      // Proses upload gambar jika user memilih gambar baru
       if (_profileImage != null || _webImageBytes != null) {
         print('DEBUG: Uploading profile image...');
+        // Memanggil API upload gambar (mengirim file atau bytes)
         final imageResponse = await _apiService.uploadProfileImage(
           _userId,
           _profileImage ?? _webImageBytes,
@@ -145,30 +152,26 @@ class _ProfilPageState extends State<ProfilPage> {
 
         if (imageResponse['status'] == 'success') {
           final newImageUrl = imageResponse['image_url'];
-          print('DEBUG: Image URL from response: $newImageUrl');
 
-          // Save image URL to preferences
+          // Simpan URL gambar baru ke penyimpanan lokal
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('profile_image', newImageUrl!);
           print('DEBUG: Image URL saved to preferences: $newImageUrl');
 
-          // Update the state with the new URL, but KEEP local bytes for now
-          // so the user doesn't see a flicker or error while the network image loads
           if (mounted) {
             setState(() {
-              _profileImageUrl = newImageUrl;
-              // We'll clear the temporary images in a bit or let _loadProfile handle it
+              _profileImageUrl =
+                  newImageUrl; // Update tampilan dengan gambar baru
             });
           }
         } else {
-          throw Exception(imageResponse['message'] ?? 'Image upload failed');
+          throw Exception(
+            imageResponse['message'] ?? 'Gagal mengupload gambar',
+          );
         }
-      } else {
-        print(
-          'DEBUG: No image to upload, checking existing image URL: $_profileImageUrl',
-        );
       }
 
+      // Proses update data teks (nama dan email)
       print('DEBUG: Updating profile data...');
       final response = await _apiService.updateProfile(
         _userId,
@@ -178,25 +181,23 @@ class _ProfilPageState extends State<ProfilPage> {
       print('DEBUG: Profile update response: $response');
 
       if (response['status'] == 'success') {
+        // Simpan data terbaru ke SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('name', _nameController.text);
         await prefs.setString('email', _emailController.text);
 
-        // Simpan profile_image yang dikembalikan oleh server (untuk sinkronisasi)
+        // Sinkronisasi data profile_image dari balasan server
         if (response['profile_image'] != null) {
           await prefs.setString('profile_image', response['profile_image']);
         }
 
-        // Jangan hapus data lokal (bytes/file) agar tampilan tetap stabil di sesi ini.
-        // Data lokal akan diprioritaskan di widget build agar user langsung melihat hasilnya.
         if (mounted) {
           setState(() {
-            // Kita biarkan _profileImage dan _webImageBytes tetap terisi.
-            // _loadProfile akan memperbarui _profileImageUrl dari preferences.
-            _loadProfile();
+            _loadProfile(); // Muat ulang data profil terbaru
           });
         }
 
+        // Tampilkan pesan sukses
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -206,9 +207,10 @@ class _ProfilPageState extends State<ProfilPage> {
           );
         }
       } else {
-        throw Exception(response['message'] ?? 'Profile update failed');
+        throw Exception(response['message'] ?? 'Gagal memperbarui profil');
       }
     } catch (e) {
+      // Penanganan error saat proses update
       print('DEBUG: Error in profile update: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -219,10 +221,11 @@ class _ProfilPageState extends State<ProfilPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false); // Hentikan loading
     }
   }
 
+  // Fungsi pembantu untuk membuat placeholder jika gambar gagal dimuat atau tidak ada
   Widget _buildImagePlaceholder({
     required IconData icon,
     required String label,
@@ -266,27 +269,17 @@ class _ProfilPageState extends State<ProfilPage> {
   }
 
   @override
+  // Membangun tampilan utama halaman profil
   Widget build(BuildContext context) {
-    print('DEBUG: Build method called');
-    print('DEBUG: _profileImage: ${_profileImage != null}');
-    print('DEBUG: _webImageBytes: ${_webImageBytes != null}');
-    print('DEBUG: _profileImageUrl: $_profileImageUrl');
-    print(
-      'DEBUG: _profileImageUrl isEmpty: ${_profileImageUrl?.isEmpty ?? true}',
-    );
-    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
-      print(
-        'DEBUG: Normalized URL: ${ApiConfig.normalizeUrl(_profileImageUrl!)}',
-      );
-    }
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(
+        0xFFF0F4F8,
+      ), // Latar belakang abu kebiruan lembut
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
         child: Column(
           children: [
-            // Header with gradient background
+            // Bagian Header dengan Gradasi Warna
             FadeInDown(
               child: Container(
                 padding: const EdgeInsets.all(30),
@@ -295,7 +288,7 @@ class _ProfilPageState extends State<ProfilPage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary, // Warna utama
                       Theme.of(context).colorScheme.primary.withOpacity(0.8),
                     ],
                   ),
@@ -313,7 +306,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 child: Column(
                   children: [
                     Text(
-                      'Profil Saya',
+                      'Profil Saya', // Judul halaman
                       style: GoogleFonts.poppins(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -322,7 +315,7 @@ class _ProfilPageState extends State<ProfilPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Kelola informasi pribadi Anda',
+                      'Kelola informasi pribadi Anda', // Sub-judul
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         color: Colors.white.withOpacity(0.9),
@@ -333,13 +326,13 @@ class _ProfilPageState extends State<ProfilPage> {
               ),
             ),
             const SizedBox(height: 30),
-            // Profile Image Section
+            // Bagian Foto Profil yang bisa diklik untuk ganti gambar
             FadeInDown(
               delay: const Duration(milliseconds: 100),
               child: Column(
                 children: [
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: _pickImage, // Picu fungsi pilih gambar
                     child: Stack(
                       children: [
                         Container(
@@ -364,6 +357,7 @@ class _ProfilPageState extends State<ProfilPage> {
                             radius: 70,
                             backgroundColor: Colors.grey[100],
                             child: ClipOval(
+                              // Memilih tampilan gambar berdasarkan prioritas (file baru > bytes web > url server)
                               child: _profileImage != null
                                   ? Image.file(
                                       _profileImage!,
@@ -381,6 +375,7 @@ class _ProfilPageState extends State<ProfilPage> {
                                   : (_profileImageUrl != null &&
                                         _profileImageUrl!.isNotEmpty)
                                   ? Image.network(
+                                      // Tambahkan timestamp di URL agar gambar tidak kena cache saat di-update
                                       '${ApiConfig.normalizeUrl(_profileImageUrl!)}&v=${DateTime.now().millisecondsSinceEpoch}',
                                       width: 140,
                                       height: 140,
@@ -388,7 +383,7 @@ class _ProfilPageState extends State<ProfilPage> {
                                       loadingBuilder:
                                           (context, child, loadingProgress) {
                                             if (loadingProgress == null)
-                                              return child;
+                                              return child; // Selesai muat
                                             return Center(
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
@@ -404,16 +399,14 @@ class _ProfilPageState extends State<ProfilPage> {
                                               ),
                                             );
                                           },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        print(
-                                          'DEBUG: Network image error: $error',
-                                        );
-                                        return _buildImagePlaceholder(
-                                          icon: Icons.broken_image_rounded,
-                                          label: 'Error',
-                                          sublabel: 'Gagal memuat',
-                                        );
-                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return _buildImagePlaceholder(
+                                              icon: Icons.broken_image_rounded,
+                                              label: 'Error',
+                                              sublabel: 'Gagal memuat',
+                                            );
+                                          },
                                     )
                                   : _buildImagePlaceholder(
                                       icon: Icons.person_rounded,
@@ -425,6 +418,7 @@ class _ProfilPageState extends State<ProfilPage> {
                       ],
                     ),
                   ),
+                  // Menampilkan ID user di bawah foto jika ada gambar
                   if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
@@ -440,8 +434,7 @@ class _ProfilPageState extends State<ProfilPage> {
               ),
             ),
             const SizedBox(height: 30),
-            const SizedBox(height: 30),
-            // Personal Information Card
+            // Kartu Informasi Personal
             FadeInUp(
               delay: const Duration(milliseconds: 300),
               child: Container(
@@ -476,7 +469,7 @@ class _ProfilPageState extends State<ProfilPage> {
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.person_rounded,
                               color: Colors.white,
                               size: 24,
@@ -494,6 +487,7 @@ class _ProfilPageState extends State<ProfilPage> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      // Tampilan Nama Lengkap
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF7FAFC),
@@ -522,9 +516,6 @@ class _ProfilPageState extends State<ProfilPage> {
                                   color: _nameController.text.isNotEmpty
                                       ? const Color(0xFF2D3748)
                                       : const Color(0xFFA0AEC0),
-                                  fontWeight: _nameController.text.isNotEmpty
-                                      ? FontWeight.normal
-                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -532,6 +523,7 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      // Tampilan Email Address
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF7FAFC),
@@ -554,15 +546,12 @@ class _ProfilPageState extends State<ProfilPage> {
                               Text(
                                 _emailController.text.isNotEmpty
                                     ? _emailController.text
-                                    : 'Email Address',
+                                    : 'Alamat Email',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   color: _emailController.text.isNotEmpty
                                       ? const Color(0xFF2D3748)
                                       : const Color(0xFFA0AEC0),
-                                  fontWeight: _emailController.text.isNotEmpty
-                                      ? FontWeight.normal
-                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -575,7 +564,7 @@ class _ProfilPageState extends State<ProfilPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // Save Button
+            // Tombol Simpan Perubahan
             FadeInUp(
               delay: const Duration(milliseconds: 400),
               child: Container(
@@ -600,7 +589,7 @@ class _ProfilPageState extends State<ProfilPage> {
                   ],
                 ),
                 child: _isLoading
-                    ? Center(
+                    ? const Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
                             Colors.white,
@@ -608,7 +597,7 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                       )
                     : ElevatedButton(
-                        onPressed: _updateProfile,
+                        onPressed: _updateProfile, // Panggil fungsi update
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           foregroundColor: Colors.white,
@@ -628,7 +617,7 @@ class _ProfilPageState extends State<ProfilPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // Logout Button
+            // Tombol Keluar dari Akun
             FadeInUp(
               delay: const Duration(milliseconds: 500),
               child: Container(
@@ -648,6 +637,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 ),
                 child: TextButton.icon(
                   onPressed: () async {
+                    // Dialog konfirmasi sebelum keluar
                     final bool? confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -658,11 +648,13 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () =>
+                                Navigator.pop(context, false), // Tutup dialog
                             child: const Text('Batal'),
                           ),
                           TextButton(
-                            onPressed: () => Navigator.pop(context, true),
+                            onPressed: () =>
+                                Navigator.pop(context, true), // Setujui logout
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.red,
                             ),
@@ -674,8 +666,10 @@ class _ProfilPageState extends State<ProfilPage> {
 
                     if (confirm == true) {
                       final prefs = await SharedPreferences.getInstance();
-                      await prefs.clear();
+                      await prefs
+                          .clear(); // Hapus semua data login dari memori lokal
                       if (mounted) {
+                        // Kembali ke halaman login dan hapus tumpukan navigasi
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (context) => LoginPage()),
                           (route) => false,

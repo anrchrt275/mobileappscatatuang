@@ -1,99 +1,102 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; // Mengimport library dasar Flutter (untuk kIsWeb dan TargetPlatform)
 
+// Kelas konfigurasi untuk pengaturan alamat API dan pemrosesan URL
 class ApiConfig {
-  // Detect platform automatically
+  // Fungsi getter untuk mendeteksi platform secara otomatis dan menentukan Base URL
   static String get baseUrl {
     if (kIsWeb) {
-      // For web testing
+      // Jika dijalankan di platform Web
       return 'https://rio.bersama.cloud/api';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // For Android emulator
+      // Jika dijalankan di emulator/perangkat Android
       return 'https://rio.bersama.cloud/api';
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      // For iOS simulator
+      // Jika dijalankan di simulator/perangkat iOS
       return 'https://rio.bersama.cloud/api';
     } else {
-      // For physical devices - use your PC's IP address
-      // Change this to your actual PC IP address
+      // Untuk perangkat fisik lainnya, menggunakan alamat IP atau domain server
       return 'https://rio.bersama.cloud/api';
     }
   }
 
-  // For development - you can override the base URL
+  // Variabel private untuk menyimpan Base URL pengganti saat pengembangan
   static String? _overrideBaseUrl;
 
+  // Fungsi untuk mengatur Base URL secara manual
   static void setBaseUrl(String url) {
     _overrideBaseUrl = url;
   }
 
+  // Fungsi getter untuk mendapatkan Base URL yang sedang aktif (asli atau pengganti)
   static String get effectiveBaseUrl {
     return _overrideBaseUrl ?? baseUrl;
   }
 
+  // Fungsi getter untuk mendapatkan Base URL tanpa akhiran '/api'
   static String get baseUrlWithoutApi {
     final effective = effectiveBaseUrl;
     return effective.replaceAll('/api', '');
   }
 
+  // Fungsi getter untuk mendapatkan URL folder unggahan (uploads)
   static String get uploadsUrl {
     return '$baseUrlWithoutApi/uploads';
   }
 
+  // Fungsi untuk menormalisasi URL gambar agar bisa ditampilkan dengan benar di aplikasi
   static String normalizeUrl(String url) {
-    if (url.isEmpty) return '';
+    if (url.isEmpty) return ''; // Kembalikan string kosong jika URL kosong
 
-    // 1. Handle full URLs (starting with http)
+    // 1. Menangani URL lengkap yang diawali dengan 'http'
     if (url.startsWith('http')) {
-      // Check if it's our production domain
+      // Memeriksa apakah URL tersebut milik domain produksi aplikasi
       if (url.contains('rio.bersama.cloud')) {
-        // Enforce HTTPS
+        // Memastikan penggunaan protokol HTTPS (lebih aman)
         if (url.startsWith('http://')) {
           return url.replaceFirst('http://', 'https://');
         }
-        return url;
+        return url; // Sudah benar
       }
 
-      // Check for dev hosts (localhost, etc)
+      // Daftar host untuk lingkungan pengembangan (localhost dll)
       final devHosts = ['localhost', '127.0.0.1', '10.0.2.2', '192.168.1.100'];
       bool isDevUrl = false;
       for (var host in devHosts) {
         if (url.contains(host)) {
-          isDevUrl = true;
+          isDevUrl = true; // Tandai jika ini URL pengembangan lokal
           break;
         }
       }
 
-      // If it's a dev URL, we want to strip the host and make it relative
-      // so we can re-append the correct base URL (which might be https://rio... or another dev host)
+      // Jika itu URL pengembangan, bersihkan host-nya agar bisa disesuaikan dengan Base URL baru
       if (isDevUrl) {
         if (url.contains('/uploads/')) {
+          // Ambil hanya nama filenya saja dari path uploads
           url = url.substring(url.indexOf('/uploads/') + 9);
-          // Fall through to relative handling
         } else {
-          // Can't identify path, just return the last segment
+          // Jika tidak ditemukan pola uploads, ambil bagian terakhir dari URL
           url = url.split('/').last;
-          // Fall through to relative handling
         }
       } else {
-        // External URL (like Unsplash/Google), return as is
+        // Jika URL eksternal (seperti Google Drive/Unsplash), kembalikan apa adanya
         return url;
       }
     }
 
-    // 2. Handle Relative Paths
+    // 2. Menangani Jalur Relatif (Relative Paths)
 
-    // Remove leading slash if present
+    // Membuang garis miring awalan jika ada (misal: '/gambar.jpg' jadi 'gambar.jpg')
     if (url.startsWith('/')) {
       url = url.substring(1);
     }
 
-    // If the path already has 'uploads/', use the view_image.php proxy
+    // Jika path diawali dengan 'uploads/', alihkan ke file proxy PHP untuk keamanan/kompresi
     if (url.startsWith('uploads/')) {
       final filename = url.replaceFirst('uploads/', '');
       return '$effectiveBaseUrl/view_image.php?file=$filename';
     }
 
-    // Otherwise assume it's a filename, use the proxy
+    // Jika berupa nama file langsung, asumsikan berada di folder gambar dan gunakan proxy
     return '$effectiveBaseUrl/view_image.php?file=$url';
   }
 }

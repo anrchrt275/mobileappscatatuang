@@ -1,18 +1,21 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:async';
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import '../models/transaction.dart';
-import '../models/article.dart';
-import '../models/message.dart';
-import 'api_config.dart';
+import 'dart:convert'; // Mengimport library untuk konversi data JSON
+import 'dart:io'; // Mengimport library untuk operasi I/O (seperti SocketException)
+import 'dart:async'; // Mengimport library untuk pemrograman asinkron (Future dan Timeout)
+import 'dart:typed_data'; // Mengimport library untuk tipe data bytes (Uint8List)
+import 'package:flutter/foundation.dart'; // Mengimport library dasar Flutter
+import 'package:http/http.dart'
+    as http; // Mengimport library untuk permintaan HTTP
+import '../models/transaction.dart'; // Mengimport model data Transaksi
+import '../models/article.dart'; // Mengimport model data Artikel
+import '../models/message.dart'; // Mengimport model data Notifikasi/Pesan
+import 'api_config.dart'; // Mengimport konfigurasi API
 
+// Kelas layanan untuk mengelola semua komunikasi dengan server API
 class ApiService {
-  // Tambahkan timeout untuk mencegah hanging
+  // Durasi maksimal menunggu respons dari server (10 detik)
   static const Duration _timeout = Duration(seconds: 10);
 
+  // Fungsi untuk melakukan permintaan Login
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http
@@ -20,12 +23,16 @@ class ApiService {
             Uri.parse('${ApiConfig.effectiveBaseUrl}/login.php'),
             body: {'email': email, 'password': password},
           )
-          .timeout(_timeout);
+          .timeout(_timeout); // Batas waktu tunggu
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(
+          response.body,
+        ); // Mengembalikan data JSON dari server
       } else {
-        throw Exception('HTTP Error: ${response.statusCode}');
+        throw Exception(
+          'HTTP Error: ${response.statusCode}',
+        ); // Galat jika status bukan 200
       }
     } on SocketException {
       throw Exception(
@@ -44,6 +51,7 @@ class ApiService {
     }
   }
 
+  // Fungsi untuk melakukan pendaftaran akun baru (Register)
   Future<Map<String, dynamic>> register(
     String name,
     String email,
@@ -66,12 +74,6 @@ class ApiService {
       throw Exception(
         'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
       );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
     } on TimeoutException {
       throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
@@ -79,6 +81,7 @@ class ApiService {
     }
   }
 
+  // Fungsi untuk mereset kata sandi (Reset Password)
   Future<Map<String, dynamic>> resetPassword(
     String email,
     String password,
@@ -96,23 +99,12 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk menambah data transaksi baru
   Future<Map<String, dynamic>> addTransaction(
     int userId,
     String type,
@@ -137,23 +129,12 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk mengambil daftar riwayat transaksi pengguna
   Future<List<Transaction>> getTransactions(int userId) async {
     try {
       final response = await http
@@ -166,27 +147,17 @@ class ApiService {
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
+        // Mengubah list JSON menjadi list objek Transaction
         return jsonResponse.map((data) => Transaction.fromJson(data)).toList();
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk mengambil data statistik dashboard (total pemasukan/pengeluaran)
   Future<Map<String, dynamic>> getDashboardStats(int userId) async {
     try {
       final response = await http
@@ -202,23 +173,12 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk mengambil daftar semua artikel
   Future<List<Article>> getArticles() async {
     try {
       final response = await http
@@ -227,27 +187,17 @@ class ApiService {
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
+        // Mengubah list JSON menjadi list objek Article
         return jsonResponse.map((data) => Article.fromJson(data)).toList();
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk mengambil daftar notifikasi/pesan untuk pengguna
   Future<List<NotificationMessage>> getMessages(int userId) async {
     try {
       final response = await http
@@ -260,29 +210,19 @@ class ApiService {
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
+        // Mengubah list JSON menjadi list objek NotificationMessage
         return jsonResponse
             .map((data) => NotificationMessage.fromJson(data))
             .toList();
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk memperbarui informasi profil teks (nama & email)
   Future<Map<String, dynamic>> updateProfile(
     int userId,
     String name,
@@ -297,46 +237,22 @@ class ApiService {
           .timeout(_timeout);
 
       if (response.statusCode == 200) {
-        try {
-          if (response.body.isEmpty) {
-            throw Exception('Empty response from server');
-          }
-          return json.decode(response.body);
-        } catch (e) {
-          print('JSON decode error in updateProfile: $e');
-          print('Response body: ${response.body}');
-          throw Exception('Invalid server response: ${e.toString()}');
-        }
+        return json.decode(response.body);
       } else {
-        print(
-          'Server responded with status ${response.statusCode}: ${response.body}',
-        );
-        throw Exception(
-          'HTTP Error: ${response.statusCode}, Response: ${response.body}',
-        );
+        throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk mengunggah foto profil baru (mendukung File mobile & Bytes web)
   Future<Map<String, dynamic>> uploadProfileImage(
     int userId,
-    dynamic imageFile, // Can be File or Uint8List
+    dynamic imageFile, // Bisa berupa objek File (Mobile) atau Uint8List (Web)
   ) async {
     try {
+      // Membuat permintaan Multipart (untuk unggah file)
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('${ApiConfig.effectiveBaseUrl}/upload_profile_image.php'),
@@ -344,37 +260,22 @@ class ApiService {
 
       request.fields['user_id'] = userId.toString();
 
-      // Handle different image types
+      // Menangani berbagai tipe input gambar
       if (imageFile is File) {
-        // For mobile/desktop - use file path
+        // Penanganan untuk platform Mobile/Desktop menggunakan path file
         request.files.add(
           await http.MultipartFile.fromPath('profile_image', imageFile.path),
         );
       } else if (imageFile is Uint8List) {
-        // For web - use bytes with proper extension detection
-        String filename = 'profile_image.jpg'; // default
+        // Penanganan untuk platform Web menggunakan bytes
+        String filename = 'profile_image.jpg'; // default nama file
 
-        // Simple format detection based on file header
+        // Deteksi format gambar sederhana berdasarkan header file bytes
         if (imageFile.length >= 4) {
-          // JPEG files start with FF D8 FF
-          if (imageFile[0] == 0xFF &&
-              imageFile[1] == 0xD8 &&
-              imageFile[2] == 0xFF) {
+          if (imageFile[0] == 0xFF && imageFile[1] == 0xD8) {
             filename = 'profile_image.jpg';
-          }
-          // PNG files start with 89 50 4E 47
-          else if (imageFile[0] == 0x89 &&
-              imageFile[1] == 0x50 &&
-              imageFile[2] == 0x4E &&
-              imageFile[3] == 0x47) {
+          } else if (imageFile[0] == 0x89 && imageFile[1] == 0x50) {
             filename = 'profile_image.png';
-          }
-          // GIF files start with 47 49 46 38
-          else if (imageFile[0] == 0x47 &&
-              imageFile[1] == 0x49 &&
-              imageFile[2] == 0x46 &&
-              imageFile[3] == 0x38) {
-            filename = 'profile_image.gif';
           }
         }
 
@@ -386,51 +287,24 @@ class ApiService {
           ),
         );
       } else {
-        throw Exception('Invalid image type');
+        throw Exception('Tipe gambar tidak valid');
       }
 
+      // Mengirim permintaan dan menunggu aliran respons
       final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
 
-      print('Upload response status: ${response.statusCode}');
-      print('Upload response body: ${response.body}');
-
       if (response.statusCode == 200) {
-        try {
-          if (response.body.isEmpty) {
-            throw Exception('Empty response from server');
-          }
-          return json.decode(response.body);
-        } catch (e) {
-          print('JSON decode error: $e');
-          print('Response body: ${response.body}');
-          throw Exception('Invalid server response: ${e.toString()}');
-        }
+        return json.decode(response.body);
       } else {
-        print(
-          'Server responded with status ${response.statusCode}: ${response.body}',
-        );
-        throw Exception(
-          'HTTP Error: ${response.statusCode}, Response: ${response.body}',
-        );
+        throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
-      throw Exception('Terjadi kesalahan: ${e.toString()}');
+      throw Exception('Gagal mengunggah gambar: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk menambahkan artikel baru (hanya judul, isi, dan URL gambar)
   Future<Map<String, dynamic>> addArticle(
     String title,
     String content,
@@ -449,23 +323,12 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk menghapus artikel berdasarkan ID
   Future<Map<String, dynamic>> deleteArticle(int id) async {
     try {
       final response = await http
@@ -480,23 +343,12 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
+  // Fungsi untuk memperbarui artikel yang sudah ada
   Future<Map<String, dynamic>> updateArticle(
     int id,
     String title,
@@ -521,18 +373,6 @@ class ApiService {
       } else {
         throw Exception('HTTP Error: ${response.statusCode}');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-      );
-    } on HttpException {
-      throw Exception(
-        'Server tidak dapat ditemukan. Pastikan server API sedang berjalan.',
-      );
-    } on FormatException {
-      throw Exception('Response server tidak valid.');
-    } on TimeoutException {
-      throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: ${e.toString()}');
     }

@@ -1,73 +1,87 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-import 'package:animate_do/animate_do.dart';
-import '../services/api_service.dart';
-import '../models/transaction.dart';
+import 'package:flutter/material.dart'; // Mengimport paket material design Flutter
+import 'package:shared_preferences/shared_preferences.dart'; // Mengimport library untuk penyimpanan data lokal
+import 'package:intl/intl.dart'; // Mengimport library untuk format mata uang dan tanggal
+import 'package:animate_do/animate_do.dart'; // Mengimport library untuk animasi UI
+import '../services/api_service.dart'; // Mengimport layanan API
+import '../models/transaction.dart'; // Mengimport model data transaksi
 
+// Kelas halaman Transaksi sebagai StatefulWidget
 class TransaksiPage extends StatefulWidget {
   const TransaksiPage({super.key});
 
   @override
+  // Membuat state untuk halaman transaksi
   _TransaksiPageState createState() => _TransaksiPageState();
 }
 
+// State class dengan WidgetsBindingObserver untuk memantau status aplikasi
 class _TransaksiPageState extends State<TransaksiPage>
     with WidgetsBindingObserver {
-  final _apiService = ApiService();
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  String _type = 'income';
-  List<Transaction> _transactions = [];
-  bool _isLoading = true;
-  double _totalPemasukan = 0.0;
-  double _totalPengeluaran = 0.0;
+  final _apiService = ApiService(); // Instansiasi layanan API
+  final _amountController =
+      TextEditingController(); // Controller untuk input nominal uang
+  final _noteController =
+      TextEditingController(); // Controller untuk input catatan transaksi
+  String _type =
+      'income'; // Menentukan jenis transaksi (income/expense), default income
+  List<Transaction> _transactions = []; // List untuk menyimpan daftar transaksi
+  bool _isLoading = true; // Status loading saat data sedang dimuat
+  double _totalPemasukan = 0.0; // Menyimpan total uang masuk
+  double _totalPengeluaran = 0.0; // Menyimpan total uang keluar
 
   @override
+  // Fungsi inisialisasi state awal
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _loadTransactions();
+    WidgetsBinding.instance.addObserver(
+      this,
+    ); // Menambahkan observer status aplikasi
+    _loadTransactions(); // Memuat data transaksi dari server
   }
 
   @override
+  // Fungsi pembersihan saat widget dihancurkan
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _amountController.dispose();
-    _noteController.dispose();
+    WidgetsBinding.instance.removeObserver(this); // Menghapus observer
+    _amountController.dispose(); // Menghapus controller nominal
+    _noteController.dispose(); // Menghapus controller catatan
     super.dispose();
   }
 
   @override
+  // Fungsi yang dipicu saat status lifecycle aplikasi berubah (misal: kembali dari background)
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Refresh when app comes to foreground
+      //Refresh data saat aplikasi kembali aktif di layar depan
       _loadTransactions();
     }
   }
 
+  // Fungsi asinkron untuk memuat data transaksi dan statistik dari API
   void _loadTransactions() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id') ?? 0;
+    final userId = prefs.getInt('user_id') ?? 0; // Mengambil user ID yang aktif
     print('DEBUG: Loading transactions for user_id: $userId');
 
     try {
-      // Load transactions
+      // Mengambil daftar transaksi lewat API
       final data = await _apiService.getTransactions(userId);
       print('DEBUG: Got ${data.length} transactions');
 
-      // Load stats
+      // Mengambil ringkasan statistik (in/out) lewat API
       final stats = await _apiService.getDashboardStats(userId);
       print('DEBUG: Got stats: $stats');
 
       if (mounted) {
         setState(() {
-          _transactions = data.reversed.toList(); // Newest first
+          _transactions = data.reversed
+              .toList(); // Urutkan dari yang terbaru (dibalik)
+          // Parsing nilai statistik dari server ke tipe data double
           _totalPemasukan = _parseDouble(stats['pemasukan']?.toString() ?? '0');
           _totalPengeluaran = _parseDouble(
             stats['pengeluaran']?.toString() ?? '0',
           );
-          _isLoading = false;
+          _isLoading = false; // Matikan status loading
         });
       }
     } catch (e) {
@@ -76,16 +90,19 @@ class _TransaksiPageState extends State<TransaksiPage>
     }
   }
 
+  // Fungsi pembantu untuk konversi string ke double dengan aman
   double _parseDouble(String value) {
     try {
       return double.parse(value);
     } catch (e) {
       print('Error parsing double: $value, error: $e');
-      return 0.0;
+      return 0.0; // Kembalikan 0 jika gagal konversi
     }
   }
 
+  // Fungsi untuk mengirim data transaksi baru ke server
   void _addTransaction() async {
+    // Validasi input nominal tidak boleh kosong
     if (_amountController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -108,6 +125,7 @@ class _TransaksiPageState extends State<TransaksiPage>
     }
 
     try {
+      // Memanggil API tambah transaksi
       final response = await _apiService.addTransaction(
         userId,
         _type,
@@ -118,23 +136,25 @@ class _TransaksiPageState extends State<TransaksiPage>
       print('DEBUG: Add transaction response: $response');
 
       if (response['status'] == 'success') {
+        // Jika berhasil, tampilkan notifikasi hijau
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Transaksi berhasil ditambahkan'),
             backgroundColor: Colors.green,
           ),
         );
-        _amountController.clear();
-        _noteController.clear();
-        Navigator.pop(context);
+        _amountController.clear(); // Kosongkan input
+        _noteController.clear(); // Kosongkan catatan
+        Navigator.pop(context); // Tutup bottom sheet tambah transaksi
 
-        // Force refresh with a small delay to ensure UI updates
+        // Refresh data setelah jeda singkat agar API sempat memproses
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             _loadTransactions();
           }
         });
       } else {
+        // Tampilkan pesan gagal jika respons bukan success
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Gagal menambahkan transaksi'),
@@ -153,8 +173,10 @@ class _TransaksiPageState extends State<TransaksiPage>
     }
   }
 
+  // Format standar mata uang Rupiah
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
+  // Fungsi widget pembuat kartu statistik (untuk pemasukan/pengeluaran)
   Widget _buildStatCard(
     String title,
     double amount,
@@ -196,6 +218,7 @@ class _TransaksiPageState extends State<TransaksiPage>
           ),
           const SizedBox(height: 12),
           FittedBox(
+            // Menampilkan nominal dengan format Rupiah
             child: Text(
               currencyFormat.format(amount),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -206,10 +229,12 @@ class _TransaksiPageState extends State<TransaksiPage>
     );
   }
 
+  // Menampilkan lembar input (Bottom Sheet) untuk tambah transaksi
   void _showAddTransactionSheet() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled:
+          true, // Membuat sheet bisa menjulang saat keyboard muncul
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -230,15 +255,17 @@ class _TransaksiPageState extends State<TransaksiPage>
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
+              // Input nominal uang
               TextField(
                 controller: _amountController,
                 decoration: const InputDecoration(
                   hintText: 'Jumlah (Rp)',
                   prefixIcon: Icon(Icons.money),
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.number, // Keyboard angka saja
               ),
               const SizedBox(height: 15),
+              // Input catatan opsional
               TextField(
                 controller: _noteController,
                 decoration: const InputDecoration(
@@ -247,6 +274,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                 ),
               ),
               const SizedBox(height: 15),
+              // Baris pemilihan tipe: Pemasukan atau Pengeluaran
               Row(
                 children: [
                   Expanded(
@@ -313,6 +341,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                 ],
               ),
               const SizedBox(height: 30),
+              // Tombol aksi simpan
               ElevatedButton(
                 onPressed: _addTransaction,
                 child: const Text(
@@ -329,6 +358,7 @@ class _TransaksiPageState extends State<TransaksiPage>
   }
 
   @override
+  // Membangun tampilan utama halaman daftar transaksi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -340,6 +370,7 @@ class _TransaksiPageState extends State<TransaksiPage>
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
+              // Tombol refresh manual
               setState(() => _isLoading = true);
               _loadTransactions();
             },
@@ -348,9 +379,12 @@ class _TransaksiPageState extends State<TransaksiPage>
       ),
       backgroundColor: const Color(0xFFF8FAFC),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(),
+            ) // Tampilkan loader jika data sedang dimuat
           : _transactions.isEmpty
           ? Center(
+              // Tampilan jika data transaksi kosong
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -377,11 +411,12 @@ class _TransaksiPageState extends State<TransaksiPage>
               ),
             )
           : RefreshIndicator(
-              onRefresh: () async => _loadTransactions(),
+              onRefresh: () async =>
+                  _loadTransactions(), // Tarik ke bawah untuk refresh
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // Income & Expense Cards
+                  // Menampilkan Kartu Statistik Pemasukan & Pengeluaran
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
@@ -407,7 +442,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Transaction List
+                  // Membangun daftar riwayat transaksi
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -417,6 +452,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                         final isPemasukan = t.type == 'income';
                         final isPengeluaran = t.type == 'expense';
                         return FadeInUp(
+                          // Animasi kemunculan item dari bawah
                           delay: Duration(
                             milliseconds: 100 * (index > 10 ? 10 : index),
                           ),
@@ -438,6 +474,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                                 horizontal: 16,
                                 vertical: 8,
                               ),
+                              // Bagian kiri: Ikon status transaksi
                               leading: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
@@ -455,6 +492,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                                       : Colors.red,
                                 ),
                               ),
+                              // Judul catatan atau jenis transaksi
                               title: Text(
                                 t.note.isEmpty
                                     ? (isPemasukan
@@ -466,6 +504,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                                   fontSize: 16,
                                 ),
                               ),
+                              // Tanggal dan waktu transaksi
                               subtitle: Text(
                                 DateFormat(
                                   'dd MMM yyyy, HH:mm',
@@ -475,6 +514,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                                   fontSize: 12,
                                 ),
                               ),
+                              // Nominal transaksi dengan tanda +/-
                               trailing: Text(
                                 isPemasukan
                                     ? '+ ${currencyFormat.format(t.amount)}'
@@ -500,6 +540,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                 ],
               ),
             ),
+      // Tombol melayang untuk menambah transaksi baru
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTransactionSheet,
         backgroundColor: Theme.of(context).colorScheme.primary,

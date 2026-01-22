@@ -1,21 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
-import '../services/api_service.dart';
+import 'package:flutter/material.dart'; // Mengimport paket material design Flutter
+import 'package:animate_do/animate_do.dart'; // Mengimport library untuk animasi widget
+import '../services/api_service.dart'; // Mengimport layanan API yang telah dibuat
 
+// Kelas halaman Registrasi sebagai StatefulWidget
 class RegisterPage extends StatefulWidget {
   @override
+  // Membuat state untuk halaman registrasi
   _RegisterPageState createState() => _RegisterPageState();
 }
 
+// State class untuk mengelola logika pendaftaran akun baru
 class _RegisterPageState extends State<RegisterPage> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _apiService = ApiService();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
+  final _nameController =
+      TextEditingController(); // Controller untuk input nama lengkap
+  final _emailController =
+      TextEditingController(); // Controller untuk input email
+  final _passwordController =
+      TextEditingController(); // Controller untuk input password
+  final _apiService = ApiService(); // Instansiasi layanan API
+  bool _isLoading = false; // Status loading saat proses pendaftaran berlangsung
+  bool _obscurePassword = true; // Status untuk sembunyi/tampilkan password
 
+  // Fungsi untuk menjalankan proses registrasi ke server
   void _register() async {
+    // Validasi: pastikan semua field input telah diisi
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty) {
@@ -25,32 +33,39 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Set status loading menjadi aktif
     try {
+      // Memanggil fungsi registrasi dari layanan API
       final response = await _apiService.register(
         _nameController.text,
         _emailController.text,
         _passwordController.text,
       );
 
+      // Jika pendaftaran berhasil (status success)
       if (response['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Akun berhasil dibuat! Silakan login.'),
-            backgroundColor: Colors.green,
+            backgroundColor:
+                Colors.green, // Warna hijau untuk notifikasi sukses
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context); // Kembali ke halaman login
       } else {
+        // Jika gagal dari sisi server, tampilkan pesan error dari server
         _showError(response['message']);
       }
     } catch (e) {
+      // Penanganan error jika terjadi masalah jaringan atau sistem
       _showError('Terjadi kesalahan koneksi');
     } finally {
+      // Set status loading kembali ke false apa pun hasilnya
       setState(() => _isLoading = false);
     }
   }
 
+  // Fungsi pembantu untuk menampilkan dialog pesan kesalahan
   void _showError(String message) {
     showDialog(
       context: context,
@@ -69,24 +84,31 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   @override
+  // Membangun tampilan UI halaman registrasi
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: Colors.transparent, // Background app bar transparan
+        elevation: 0, // Tanpa bayangan
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black87,
+          ), // Tombol kembali gaya iOS
+          onPressed: () =>
+              Navigator.pop(context), // Kembali ke halaman sebelumnya
         ),
       ),
       body: SingleChildScrollView(
+        // Bungkus dengan scroll agar tidak terpotong saat keyboard muncul
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
+              // Animasi judul halaman jatuh dari atas
               FadeInDown(
                 child: Text(
                   'Buat Akun Baru',
@@ -97,6 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
+              // Animasi deskripsi singkat
               FadeInDown(
                 delay: const Duration(milliseconds: 200),
                 child: Text(
@@ -105,6 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 40),
+              // Input Field: Nama Lengkap
               FadeInUp(
                 delay: const Duration(milliseconds: 300),
                 child: TextField(
@@ -116,6 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
+              // Input Field: Email
               FadeInUp(
                 delay: const Duration(milliseconds: 400),
                 child: TextField(
@@ -127,11 +152,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
+              // Input Field: Password dengan fitur sembunyi/tampilkan
               FadeInUp(
                 delay: const Duration(milliseconds: 500),
                 child: TextField(
                   controller: _passwordController,
-                  obscureText: _obscurePassword,
+                  obscureText: _obscurePassword, // Status sensor password
                   decoration: InputDecoration(
                     hintText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
@@ -143,6 +169,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: Colors.grey,
                       ),
                       onPressed: () {
+                        // Merubah status visibilitas password
                         setState(() {
                           _obscurePassword = !_obscurePassword;
                         });
@@ -152,12 +179,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 50),
+              // Tombol Daftar atau Loader
               FadeInUp(
                 delay: const Duration(milliseconds: 600),
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      ) // Loader saat sedang mendaftar
                     : ElevatedButton(
-                        onPressed: _register,
+                        onPressed: _register, // Trigger fungsi registrasi
                         child: const Text(
                           'DAFTAR',
                           style: TextStyle(
@@ -168,6 +198,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
               ),
               const SizedBox(height: 30),
+              // Navigasi bawah untuk pengguna yang sudah punya akun
               FadeInUp(
                 delay: const Duration(milliseconds: 700),
                 child: Row(
@@ -178,7 +209,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () =>
+                          Navigator.pop(context), // Kembali ke login
                       child: Text(
                         'MASUK',
                         style: TextStyle(

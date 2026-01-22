@@ -1,24 +1,32 @@
-import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
-import 'register_page.dart';
-import 'reset_password_page.dart';
-import 'dashboard_page.dart';
+import 'package:flutter/material.dart'; // Mengimport paket UI dasar Flutter
+import 'package:animate_do/animate_do.dart'; // Mengimport paket animasi widget
+import 'package:shared_preferences/shared_preferences.dart'; // Mengimport paket untuk simpan data lokal sederhana
+import '../services/api_service.dart'; // Mengimport layanan API
+import 'register_page.dart'; // Mengimport halaman pendaftaran
+import 'reset_password_page.dart'; // Mengimport halaman lupa password
+import 'dashboard_page.dart'; // Mengimport halaman dashboard utama
 
+// Kelas halaman login sebagai StatefulWidget
 class LoginPage extends StatefulWidget {
   @override
+  // Membuat state untuk halaman login
   _LoginPageState createState() => _LoginPageState();
 }
 
+// State class untuk LoginPage yang menampung logika login
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _apiService = ApiService();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
+  final _emailController =
+      TextEditingController(); // Controller untuk input email
+  final _passwordController =
+      TextEditingController(); // Controller untuk input password
+  final _apiService = ApiService(); // Instansiasi layanan API
+  bool _isLoading = false; // Status loading saat proses login
+  bool _obscurePassword =
+      true; // Status untuk menyembunyikan/menampilkan password
 
+  // Fungsi untuk menjalankan proses login
   void _login() async {
+    // Validasi input email dan password tidak boleh kosong
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email dan password tidak boleh kosong')),
@@ -26,15 +34,18 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Set status loading jadi true
     try {
+      // Memanggil fungsi login dari API Service
       final response = await _apiService.login(
         _emailController.text,
         _passwordController.text,
       );
 
+      // Jika login berhasil
       if (response['status'] == 'success') {
         final prefs = await SharedPreferences.getInstance();
+        // Simpan data user ke dalam SharedPreferences (penyimpanan lokal)
         await prefs.setInt(
           'user_id',
           int.parse(response['user_id'].toString()),
@@ -46,20 +57,25 @@ class _LoginPageState extends State<LoginPage> {
         if (response['profile_image'] != null)
           await prefs.setString('profile_image', response['profile_image']);
 
+        // Pindah ke halaman Dashboard dan hapus history halaman sebelumnya
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => DashboardPage()),
         );
       } else {
+        // Tampilkan error jika status bukan success
         _showError(response['message']);
       }
     } catch (e) {
+      // Tampilkan error jika terjadi kegagalan sistem/jaringan
       _showError(e.toString());
     } finally {
+      // Set status loading kembali ke false setelah proses selesai
       setState(() => _isLoading = false);
     }
   }
 
+  // Fungsi pembantu untuk menampilkan dialog pesan error
   void _showError(String message) {
     showDialog(
       context: context,
@@ -78,13 +94,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  // Membangun tampilan UI halaman login
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
+        // Agar halaman bisa discroll saat keyboard muncul
         child: Container(
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
+            // Memberikan efek gradasi pada latar belakang
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -99,6 +118,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Animasi ikon jatuh dari atas
                 FadeInDown(
                   duration: const Duration(milliseconds: 800),
                   child: Container(
@@ -117,6 +137,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
+                // Animasi teks judul
                 FadeInDown(
                   delay: const Duration(milliseconds: 200),
                   child: Text(
@@ -128,6 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+                // Deskripsi singkat aplikasi
                 FadeInDown(
                   delay: const Duration(milliseconds: 300),
                   child: Text(
@@ -137,6 +159,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 50),
+                // Input field untuk Email
                 FadeInUp(
                   delay: const Duration(milliseconds: 400),
                   child: TextField(
@@ -148,6 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // Input field untuk Password dengan tombol lihat/sembunyi
                 FadeInUp(
                   delay: const Duration(milliseconds: 500),
                   child: TextField(
@@ -164,6 +188,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.grey,
                         ),
                         onPressed: () {
+                          // Toggle status visibilitas password
                           setState(() {
                             _obscurePassword = !_obscurePassword;
                           });
@@ -173,6 +198,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Tombol navigasi Lupa Password
                 Align(
                   alignment: Alignment.centerRight,
                   child: FadeInUp(
@@ -194,6 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
+                // Tombol login atau loader jika sedang memproses
                 FadeInUp(
                   delay: const Duration(milliseconds: 700),
                   child: _isLoading
@@ -210,6 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                 ),
                 const SizedBox(height: 20),
+                // Link ke halaman pendaftaran (Register)
                 FadeInUp(
                   delay: const Duration(milliseconds: 800),
                   child: Row(
