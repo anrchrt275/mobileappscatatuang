@@ -4,13 +4,15 @@
 
 ## ✨ Fitur Utama
 
-- **Otentikasi Pengguna**: Sistem Login, Register, dan Reset Password yang aman.
-- **Dashboard Statistik**: Ringkasan keuangan secara visual untuk memantau saldo, pemasukan, dan pengeluaran.
-- **Manajemen Transaksi**: Mencatat, melihat, dan mengelola data transaksi keuangan dengan mudah.
-- **Fitur Artikel**: Akses ke artikel-artikel bermanfaat seputar tips keuangan dan edukasi finansial.
-- **Profil Pengguna**: Pengaturan profil yang dapat disesuaikan, termasuk penggantian foto profil.
-- **Sistem Notifikasi**: Memberikan informasi atau pengingat terkait aktivitas akun.
-- **Privasi Saldo**: Opsi untuk menyembunyikan atau menampilkan saldo pada halaman utama.
+- **Otentikasi Pengguna**: Sistem Login, Register, dan Reset Password yang aman dengan manajemen session.
+- **Dashboard Modern**: Tampilan beranda yang informatif dengan ringkasan saldo, pemasukan, dan pengeluaran secara visual.
+- **Manajemen Transaksi (CRUD)**: Kemampuan penuh untuk menambah, melihat, mengubah, dan menghapus transaksi keuangan.
+- **Sapaan Personal**: Fitur sapaan user dinamis dalam bentuk badge modern di bagian AppBar untuk pengalaman yang lebih personil.
+- **Privasi Saldo**: Fitur sembunyikan nominal saldo dengan satu sentuhan (tombol mata) untuk menjaga privasi di tempat umum.
+- **Profil & Identitas**: Pengaturan profil lengkap dengan fitur unggah foto profil yang tersinkronisasi.
+- **Edukasi Finansial**: Akses langsung ke daftar artikel edukatif tentang pengelolaan uang.
+- **UI/UX Premium**: Desain antarmuka yang bersih, responsif, dan dilengkapi dengan animasi halus untuk kenyamanan pengguna.
+- **Sinkronisasi API**: Integrasi penuh dengan REST API untuk penyimpanan data yang aman dan terpusat.
 
 ## 🛠️ Teknologi yang Digunakan
 
