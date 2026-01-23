@@ -4,6 +4,7 @@ import 'transaksi_page.dart'; // Mengimport halaman transaksi
 import 'artikel_page.dart'; // Mengimport halaman artikel
 import 'notifikasi_page.dart'; // Mengimport halaman notifikasi
 import 'profil_page.dart'; // Mengimport halaman profil
+import 'package:shared_preferences/shared_preferences.dart'; // Mengimport library untuk penyimpanan data lokal
 
 // Kelas utama DashboardPage sebagai StatefulWidget
 class DashboardPage extends StatefulWidget {
@@ -15,6 +16,21 @@ class DashboardPage extends StatefulWidget {
 // State class untuk mengatur logika dan tampilan Dashboard
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0; // Index halaman yang aktif saat ini
+  String _userName = ''; // Variabel penyimpan nama user
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  // Fungsi untuk memuat nama user dari SharedPreferences
+  void _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('name') ?? 'User';
+    });
+  }
 
   // Daftar halaman yang akan ditampilkan di BottomNavigationBar
   final List<Widget> _pages = [
@@ -53,26 +69,33 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: const Color(0xFFF8FAFC), // Warna latar belakang halaman
       appBar: AppBar(
         title: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: const [
-            Text(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
               'CATATUANG', // Judul aplikasi di App Bar
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
               ), // Gaya teks judul
             ),
-            SizedBox(width: 8),
-            Text(
-              'AfriYudha, M. Kom', // Nama Programmer
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.normal,
-                color: Colors.grey,
-              ), // Gaya teks nama programmer (lebih kecil)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Halo, $_userName!', // Sapaan user di sebelah kanan
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
           ],
         ),
+
         backgroundColor: Colors.white, // Warna background App Bar
         foregroundColor: Colors.black87, // Warna teks/ikon di App Bar
         elevation: 0, // Menghilangkan bayangan di bawah App Bar

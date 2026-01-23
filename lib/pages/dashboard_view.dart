@@ -16,7 +16,6 @@ class DashboardView extends StatefulWidget {
 // State class yang menampung logika tampilan dashboard
 class _DashboardViewState extends State<DashboardView> {
   final _apiService = ApiService(); // Instansiasi layanan API
-  String _userName = ''; // Variabel penyimpan nama user
   double _saldo = 0; // Variabel penyimpan total saldo
   double _pemasukan = 0; // Variabel penyimpan total pemasukan
   double _pengeluaran = 0; // Variabel penyimpan total pengeluaran
@@ -38,16 +37,12 @@ class _DashboardViewState extends State<DashboardView> {
     final prefs =
         await SharedPreferences.getInstance(); // Mendapatkan akses shared preferences
     final userId = prefs.getInt('user_id') ?? 0; // Mengambil user ID, default 0
-    final name =
-        prefs.getString('name') ??
-        'User'; // Mengambil nama user, default 'User'
     final isVisible =
         prefs.getBool('is_saldo_visible') ??
         true; // Mengambil status visibilitas saldo
 
     if (mounted) {
       setState(() {
-        _userName = name; // Update nama user di UI
         _isSaldoVisible = isVisible; // Update status visibilitas saldo di UI
       });
     }
@@ -208,12 +203,6 @@ class _DashboardViewState extends State<DashboardView> {
                   ),
                   const SizedBox(height: 20), // Jarak vertikal
                   const Divider(color: Colors.white24), // Garis pembatas tipis
-                  const SizedBox(height: 10),
-                  // Teks sambutan user
-                  Text(
-                    'Halo, $_userName!',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
                 ],
               ),
             ),
