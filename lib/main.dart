@@ -34,12 +34,20 @@ class MyApp extends StatelessWidget {
           false, // Menghilangkan banner "DEBUG" di pojok aplikasi
       // Konfigurasi Tema (Theme) aplikasi secara global
       theme: ThemeData(
-        useMaterial3: true, // Mengaktifkan desain Material 3 terbaru
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1), // Warna dasar/benih untuk tema
-          primary: const Color(0xFF6366F1), // Warna utama aplikasi (Indigo)
-          secondary: const Color(0xFF0EA5E9), // Warna sekunder (Biru langit)
-          surface: const Color(0xFFF8FAFC), // Warna latar belakang permukaan
+          seedColor: const Color(0xFF6366F1),
+          primary: const Color(0xFF6366F1),
+          secondary: const Color(0xFF0EA5E9),
+          surface: Colors.white,
+          background: const Color(0xFFF8FAFC),
+        ),
+        // Smooth page transitions
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
         ),
 
         // Mengatur font default menggunakan Google Fonts Plus Jakarta Sans
@@ -57,11 +65,9 @@ class MyApp extends StatelessWidget {
               56,
             ), // Ukuran tombol lebar penuh
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                16,
-              ), // Sudut tombol melengkung
+              borderRadius: BorderRadius.circular(20),
             ),
-            elevation: 0, // Tanpa bayangan tombol
+            elevation: 0,
           ),
         ),
 
@@ -70,19 +76,16 @@ class MyApp extends StatelessWidget {
           filled: true,
           fillColor: Colors.white, // Latar belakang input putih
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none, // Tanpa garis pinggir default
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: Color(0xFF6366F1),
-              width: 2,
-            ), // Garis pinggir saat diklik
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,

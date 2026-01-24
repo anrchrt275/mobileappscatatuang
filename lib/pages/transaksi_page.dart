@@ -28,6 +28,10 @@ class _TransaksiPageState extends State<TransaksiPage>
   bool _isLoading = true; // Status loading saat data sedang dimuat
   double _totalPemasukan = 0.0; // Menyimpan total uang masuk
   double _totalPengeluaran = 0.0; // Menyimpan total uang keluar
+  final _searchController =
+      TextEditingController(); // Controller untuk pencarian
+  String _selectedFilter = 'all'; // Filter terpilih: all, income, expense
+  String _searchQuery = ''; // Query pencarian
 
   @override
   // Fungsi inisialisasi state awal
@@ -36,6 +40,11 @@ class _TransaksiPageState extends State<TransaksiPage>
     WidgetsBinding.instance.addObserver(
       this,
     ); // Menambahkan observer status aplikasi
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
     _loadTransactions(); // Memuat data transaksi dari server
   }
 
@@ -45,6 +54,7 @@ class _TransaksiPageState extends State<TransaksiPage>
     WidgetsBinding.instance.removeObserver(this); // Menghapus observer
     _amountController.dispose(); // Menghapus controller nominal
     _noteController.dispose(); // Menghapus controller catatan
+    _searchController.dispose(); // Menghapus controller pencarian
     super.dispose();
   }
 
@@ -98,6 +108,23 @@ class _TransaksiPageState extends State<TransaksiPage>
       print('Error parsing double: $value, error: $e');
       return 0.0; // Kembalikan 0 jika gagal konversi
     }
+  }
+
+  // Fungsi untuk mendapatkan list transaksi yang sudah difilter
+  List<Transaction> get _filteredTransactions {
+    return _transactions.where((t) {
+      // Filter berdasarkan tipe
+      final matchesFilter =
+          _selectedFilter == 'all' || t.type == _selectedFilter;
+      // Filter berdasarkan pencarian (catatan atau tipe)
+      final note = t.note.toLowerCase();
+      final type = (t.type == 'income' ? 'pemasukan' : 'pengeluaran')
+          .toLowerCase();
+      final matchesSearch =
+          note.contains(_searchQuery) || type.contains(_searchQuery);
+
+      return matchesFilter && matchesSearch;
+    }).toList();
   }
 
   // Fungsi untuk mengirim data transaksi baru ke server
@@ -342,6 +369,52 @@ class _TransaksiPageState extends State<TransaksiPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Widget helper untuk chip filter
+  Widget _buildFilterChip(String label, String value, IconData icon) {
+    final isSelected = _selectedFilter == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isSelected ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey[600],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -703,101 +776,192 @@ class _TransaksiPageState extends State<TransaksiPage>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Membangun daftar riwayat transaksi
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _transactions.length,
-                      itemBuilder: (context, index) {
-                        final t = _transactions[index];
-                        final isPemasukan = t.type == 'income';
-                        final isPengeluaran = t.type == 'expense';
-                        return FadeInUp(
-                          // Animasi kemunculan item dari bawah
-                          delay: Duration(
-                            milliseconds: 100 * (index > 10 ? 10 : index),
+
+                  // Bagian Pencarian
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Cari transaksi...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey[400],
+                          ),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    FocusScope.of(context).unfocus();
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Chips Filter
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      children: [
+                        _buildFilterChip('Semua', 'all', Icons.all_out_rounded),
+                        _buildFilterChip(
+                          'Pemasukan',
+                          'income',
+                          Icons.arrow_upward_rounded,
+                        ),
+                        _buildFilterChip(
+                          'Pengeluaran',
+                          'expense',
+                          Icons.arrow_downward_rounded,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Membangun daftar riwayat transaksi yang sudah difilter
+                  Expanded(
+                    child: _filteredTransactions.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey[300],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tidak ditemukan transaksi',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[500],
+                                  ),
                                 ),
                               ],
                             ),
-                            child: ListTile(
-                              onTap: () => _showEditTransactionSheet(t),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              // Bagian kiri: Ikon status transaksi
-                              leading: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color:
-                                      (isPemasukan ? Colors.green : Colors.red)
-                                          .withOpacity(0.1),
-                                  shape: BoxShape.circle,
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: _filteredTransactions.length,
+                            itemBuilder: (context, index) {
+                              final t = _filteredTransactions[index];
+                              final isPemasukan = t.type == 'income';
+                              final isPengeluaran = t.type == 'expense';
+                              return FadeInUp(
+                                // Animasi kemunculan item dari bawah
+                                delay: Duration(
+                                  milliseconds: 100 * (index > 10 ? 10 : index),
                                 ),
-                                child: Icon(
-                                  isPemasukan
-                                      ? Icons.add_rounded
-                                      : Icons.remove_rounded,
-                                  color: isPemasukan
-                                      ? Colors.green
-                                      : Colors.red,
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.02),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ListTile(
+                                    onTap: () => _showEditTransactionSheet(t),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 2,
+                                    ),
+                                    // Bagian kiri: Ikon status transaksi
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            (isPemasukan
+                                                    ? Colors.green
+                                                    : Colors.red)
+                                                .withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        isPemasukan
+                                            ? Icons.add_rounded
+                                            : Icons.remove_rounded,
+                                        color: isPemasukan
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                    ),
+                                    // Judul catatan atau jenis transaksi
+                                    title: Text(
+                                      t.note.isEmpty
+                                          ? (isPemasukan
+                                                ? 'Pemasukan'
+                                                : 'Pengeluaran')
+                                          : t.note,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    // Tanggal dan waktu transaksi
+                                    subtitle: Text(
+                                      DateFormat(
+                                        'dd MMM yyyy, HH:mm',
+                                      ).format(t.createdAt),
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    // Nominal transaksi dengan tanda +/-
+                                    trailing: Text(
+                                      isPemasukan
+                                          ? '+ ${currencyFormat.format(t.amount)}'
+                                          : isPengeluaran
+                                          ? '- ${currencyFormat.format(t.amount)}'
+                                          : '? ${currencyFormat.format(t.amount)}',
+                                      style: TextStyle(
+                                        color: isPemasukan
+                                            ? Colors.green
+                                            : isPengeluaran
+                                            ? Colors.red
+                                            : Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              // Judul catatan atau jenis transaksi
-                              title: Text(
-                                t.note.isEmpty
-                                    ? (isPemasukan
-                                          ? 'Pemasukan'
-                                          : 'Pengeluaran')
-                                    : t.note,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              // Tanggal dan waktu transaksi
-                              subtitle: Text(
-                                DateFormat(
-                                  'dd MMM yyyy, HH:mm',
-                                ).format(t.createdAt),
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                              // Nominal transaksi dengan tanda +/-
-                              trailing: Text(
-                                isPemasukan
-                                    ? '+ ${currencyFormat.format(t.amount)}'
-                                    : isPengeluaran
-                                    ? '- ${currencyFormat.format(t.amount)}'
-                                    : '? ${currencyFormat.format(t.amount)}',
-                                style: TextStyle(
-                                  color: isPemasukan
-                                      ? Colors.green
-                                      : isPengeluaran
-                                      ? Colors.red
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

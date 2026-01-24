@@ -103,61 +103,64 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       body:
           _pages[_currentIndex], // Menampilkan halaman sesuai index yang dipilih
-      // Bagian bawah navigasi aplikasi
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(
-                0.05,
-              ), // Bayangan halus di atas Nav Bar
-              blurRadius: 20,
-              offset: const Offset(0, -5), // Arah bayangan ke atas
+      // Bagian bawah navigasi aplikasi dengan gaya melayang (Floating)
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            16,
+          ), // Memberikan jarak dari tepi agar melayang
+          height: 64,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24), // Sudut melengkung penuh
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 10), // Bayangan jatuh ke bawah
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: _currentIndex == _currentIndex ? _onTabTapped : null,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              unselectedItemColor: Colors.grey[400],
+              showSelectedLabels:
+                  false, // Menghilangkan label agar lebih minimalis
+              showUnselectedLabels: false,
+              elevation: 0,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.grid_view_rounded),
+                  label: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.account_balance_wallet_rounded),
+                  label: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.menu_book_rounded),
+                  label: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.notifications_rounded),
+                  label: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_rounded),
+                  label: '',
+                ),
+              ],
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex, // Index yang sedang terpilih
-          type: BottomNavigationBarType.fixed, // Tipe bar tetap (tidak geser)
-          backgroundColor: Colors.white, // Warna background Nav Bar
-          selectedItemColor: Theme.of(
-            context,
-          ).colorScheme.primary, // Warna saat item dipilih
-          unselectedItemColor:
-              Colors.grey[400], // Warna saat item tidak dipilih
-          showSelectedLabels: true, // Tampilkan label teks yang terpilih
-          showUnselectedLabels:
-              true, // Tampilkan label teks yang tidak terpilih
-          elevation: 0, // Tanpa bayangan internal
-          items: const [
-            // Definisi masing-masing item navigasi
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded), // Ikon garis luar
-              activeIcon: Icon(Icons.grid_view_rounded), // Ikon saat aktif
-              label: 'Beranda', // Teks label
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet_rounded),
-              label: 'Transaksi',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book_rounded),
-              label: 'Artikel',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_none_rounded),
-              activeIcon: Icon(Icons.notifications_rounded),
-              label: 'Notif',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profil',
-            ),
-          ],
-          onTap: _onTabTapped, // Menghubungkan klik dengan fungsi ganti tab
+          ),
         ),
       ),
     );
