@@ -11,6 +11,7 @@
 - **Privasi Saldo**: Fitur sembunyikan nominal saldo dengan satu sentuhan (tombol mata) untuk menjaga privasi di tempat umum.
 - **Profil & Identitas**: Pengaturan profil lengkap dengan fitur unggah foto profil yang tersinkronisasi.
 - **Edukasi Finansial**: Akses langsung ke daftar artikel edukatif tentang pengelolaan uang.
+- **Komentar Kode (Full Indonesian)**: Seluruh baris kode dilengkapi dengan komentar dalam bahasa Indonesia untuk kemudahan pemeliharaan.
 - **UI/UX Premium**: Desain antarmuka yang bersih, responsif, dan dilengkapi dengan animasi halus untuk kenyamanan pengguna.
 - **Sinkronisasi API**: Integrasi penuh dengan REST API untuk penyimpanan data yang aman dan terpusat.
 
